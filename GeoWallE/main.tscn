@@ -1,0 +1,76 @@
+[gd_scene load_steps=3 format=3 uid="uid://duh67uty15dum"]
+
+[ext_resource type="Script" path="res://MainWindows/CodeEditorScript.cs" id="1_ojxpf"]
+[ext_resource type="Script" path="res://MainWindows/OutputConsole.cs" id="2_4rxl0"]
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -2.0
+offset_bottom = 2.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Plane" type="Control" parent="."]
+clip_contents = true
+anchors_preset = 0
+offset_right = 650.0
+offset_bottom = 650.0
+
+[node name="Background" type="ColorRect" parent="Plane"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PlaneCenter" type="Sprite2D" parent="Plane"]
+position = Vector2(325, 325)
+
+[node name="XAxis" type="Line2D" parent="Plane/PlaneCenter"]
+points = PackedVector2Array(-325, 0, 325, 0)
+width = 2.0
+default_color = Color(1, 0, 0, 1)
+
+[node name="YAxis" type="Line2D" parent="Plane/PlaneCenter"]
+points = PackedVector2Array(0, 325, 0, -325)
+width = 2.0
+default_color = Color(0.317647, 1, 0, 1)
+
+[node name="CodeEditor" type="Control" parent="."]
+layout_mode = 1
+anchor_left = 0.565
+anchor_right = 0.891
+anchor_bottom = 0.609
+offset_right = 125.1
+offset_bottom = 254.15
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Background" type="ColorRect" parent="CodeEditor"]
+layout_mode = 0
+offset_right = 500.0
+offset_bottom = 650.0
+color = Color(0.615686, 0.615686, 0.615686, 1)
+
+[node name="CodeEdit" type="CodeEdit" parent="CodeEditor"]
+layout_mode = 0
+offset_right = 500.0
+offset_bottom = 475.0
+script = ExtResource("1_ojxpf")
+
+[node name="OutputConsole" type="RichTextLabel" parent="CodeEditor"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 475.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 2
+text = "df"
+selection_enabled = true
+script = ExtResource("2_4rxl0")
