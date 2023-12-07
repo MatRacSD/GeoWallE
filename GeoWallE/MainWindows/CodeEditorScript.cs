@@ -16,7 +16,7 @@ public partial class CodeEditorScript : CodeEdit
 	public override void _Ready()
 	{
 		  outputConsole = GetNode<OutputConsole>("/root/Main/CodeEditor/OutputConsole");
-		  plane = GetNode<Sprite2D>("/root/Main/Plane/PlaneCenter");
+		  plane = GetNode<Sprite2D>("/root/Main/Plane/PlaneSpriteContainer");
 		   // Create a timer node
 		delayTimer = new Timer();
 		AddChild(delayTimer);
@@ -42,10 +42,21 @@ public partial class CodeEditorScript : CodeEdit
 		
 		if(canPressF5 && Input.IsKeyPressed(Key.F5))
 		{
+			var  planeSprites = plane.GetChildren();
+			foreach (var child in planeSprites)
+			{
+				child.QueueFree();
+			}
 			canPressF5 = false;
 			State state = new();
 			List<PointNode> pointNodes = state.RunTest1(Text);
 			//if(true)outputConsole.Text = pointNodes[0].name;
+			outputConsole.Text = " ";
+			
+			foreach (ErrorNode item in state.errorNodes)
+			{
+				outputConsole.Text = "An exception ocurred: " + item.Error + "\n";
+			}
 			 foreach (PointNode pn in pointNodes)
 			{
 				Sprite2D sprite = new Sprite2D();

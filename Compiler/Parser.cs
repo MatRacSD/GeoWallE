@@ -74,7 +74,7 @@ namespace Compiler
                     else if (tokens[i].Content == ";")
                     {
                         mainNodes.Add(new MainNode(auxTokenList));
-                        auxTokenList = new List<Token>();
+                        auxTokenList = new();
                     }
                     else auxTokenList.Add(tokens[i]);
                 }
@@ -92,12 +92,17 @@ namespace Compiler
                 mainNodes = new List<Node>() { new ErrorNode() { Error = "falta in en let-in" } };
                 return mainNodes;
             }
+            else if(auxTokenList.Count > 0)
+            {
+                mainNodes = new List<Node>() { new ErrorNode() { Error = "falta ;" } };
+                return mainNodes;
+            }
             
             
             List<Token> unasignedTokens = new();
             bool isParentesisOpen = false;
             List<Node> nodes = new();
-
+            
             foreach (MainNode node in mainNodes)
             {
                 if (node.GetType() == "MainNode")
@@ -145,13 +150,16 @@ namespace Compiler
                     else if (unasignedTokens.Count > 0) nodes.Add(new UnparsedNode() { tokenList = unasignedTokens.Clone() });
                     if (nodes.Count > 0) {
                         //throw new Exception(nodes.Count.ToString());
-                        node.nodes = nodes;
+                        ((MainNode)node).nodes = nodes;
                         
                         }
                     nodes = new();
                     unasignedTokens.Clear();
                 }
+                
             }
+
+            
 
             return mainNodes;
         }
@@ -171,6 +179,7 @@ namespace Compiler
                     {
                         for (int i = 0; i < nodes.Count; i++) //iteracion por cada nodo
                         {
+                            if(nodes[i].GetType() == "ErrorNode") {nodes1.Add(nodes[i]); continue;}
                             if (nodes[i].GetType() == UN || nodes[i].GetType() == PN)
                             {
                                 for (int j = 0; j < nodes[i].tokenList.Count; j++) //iteracion por cada token del nodo

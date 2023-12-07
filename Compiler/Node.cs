@@ -536,7 +536,7 @@ namespace Compiler
 
         public override string GetType()
         {
-            throw new NotImplementedException();
+            return "ErrorNode";
         }
 
         public override Node Parse()

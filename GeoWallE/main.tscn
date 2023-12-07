@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://MainWindows/CodeEditorScript.cs" id="1_ojxpf"]
 [ext_resource type="Texture2D" uid="uid://btdxebrhmd1ac" path="res://Point.png" id="1_ym2ao"]
-[ext_resource type="Script" path="res://MainWindows/OutputConsole.cs" id="2_4rxl0"]
+[ext_resource type="Script" path="res://MainWindows/OutputConsole.cs" id="3_uxrnx"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -47,6 +47,9 @@ position = Vector2(10, 10)
 scale = Vector2(0.01, 0.01)
 texture = ExtResource("1_ym2ao")
 
+[node name="PlaneSpriteContainer" type="Sprite2D" parent="Plane"]
+position = Vector2(325, 325)
+
 [node name="CodeEditor" type="Control" parent="."]
 layout_mode = 1
 anchor_left = 0.565
@@ -67,6 +70,7 @@ color = Color(0.615686, 0.615686, 0.615686, 1)
 layout_mode = 0
 offset_right = 500.0
 offset_bottom = 475.0
+auto_brace_completion_enabled = true
 script = ExtResource("1_ojxpf")
 
 [node name="OutputConsole" type="RichTextLabel" parent="CodeEditor"]
@@ -80,4 +84,4 @@ grow_vertical = 2
 focus_mode = 2
 text = "df"
 selection_enabled = true
-script = ExtResource("2_4rxl0")
+script = ExtResource("3_uxrnx")
