@@ -286,7 +286,7 @@ namespace Compiler
                     {
                         if (!vars.ContainsKey(name))
                         {
-                            vars.Add(name, Parser.Parse(aux_toks, 1).GetValue());
+                            vars.Add(name, Parser.ParseObsolete(aux_toks, 1).GetValue());
                             name = null;
                             aux_toks.Clear();
                             count = 0;
@@ -294,7 +294,7 @@ namespace Compiler
                         }
                         else
                         {
-                            vars[name] = Parser.Parse(aux_toks, 1).GetValue();
+                            vars[name] = Parser.ParseObsolete(aux_toks, 1).GetValue();
                             name = null;
                             aux_toks.Clear();
                             count = 0;
@@ -306,7 +306,7 @@ namespace Compiler
                         if (!vars.ContainsKey(name))
                         {
                             aux_toks.Add(token.exp[i]);
-                            vars.Add(name, Parser.Parse(aux_toks, 1).GetValue());
+                            vars.Add(name, Parser.ParseObsolete(aux_toks, 1).GetValue());
                             name = null;
                             aux_toks.Clear();
 
@@ -315,7 +315,7 @@ namespace Compiler
                         else
                         {
                             aux_toks.Add(token.exp[i]);
-                            vars[name] = Parser.Parse(aux_toks, 1).GetValue();
+                            vars[name] = Parser.ParseObsolete(aux_toks, 1).GetValue();
                             name = null;
                             aux_toks.Clear();
                             continue;
@@ -350,7 +350,7 @@ namespace Compiler
                 }
             }
 
-            return Parser.Parse(token.exp_2, 1).GetValue();
+            return Parser.ParseObsolete(token.exp_2, 1).GetValue();
 
 
 
@@ -358,7 +358,7 @@ namespace Compiler
 
         public static Token IfElse(Token token)
         {
-            string tbool = Parser.Parse(token.bool_exp, 1).GetValue().Content.ToString().ToLower();
+            string tbool = Parser.ParseObsolete(token.bool_exp, 1).GetValue().Content.ToString().ToLower();
             if (token.Content != "if-else")
             {
                 throw new ArgumentException();
@@ -366,12 +366,12 @@ namespace Compiler
 
             else if (tbool == "true")
             {
-                return Parser.Parse(token.exp, 1).GetValue();
+                return Parser.ParseObsolete(token.exp, 1).GetValue();
             }
 
             else if (tbool == "false")
             {
-                return Parser.Parse(token.exp_2, 1).GetValue();
+                return Parser.ParseObsolete(token.exp_2, 1).GetValue();
             }
 
             Error.errors.Add(new Error() { Type = "SEMANTIC ERROR: se esperaba un bool en la condicion de la expresión if-else" });

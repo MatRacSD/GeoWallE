@@ -1,5 +1,7 @@
 
 
+using System.Buffers;
+using System.Collections;
 using System.Threading.Tasks.Dataflow;
 
 namespace Compiler
@@ -8,14 +10,31 @@ namespace Compiler
      /// <summary>
      /// Representa los objetos que constituyen la entrada del usuario
      /// </summary>
-    public class Token
+    public class Token : IComparer
     {
 
         public override string ToString()
         {
             return Type + "{" + Content + "}";
         }
+/*
+        public override bool Equals(Token token)
+        {
 
+        }
+
+        public static bool operator ==(Token ta , Token tb)
+        {
+            
+            if(ta == null || ta.Type == null|| ta.Content == null || tb == null || tb.Type == null || tb.Content == null)
+            return false; 
+              return ta.Type == tb.Type &&  ta.Content == tb.Content;
+        }
+        public static bool operator !=(Token ta, Token tb)
+        {
+            return !(ta == tb);
+        }
+*/
         
         public Token Clone()
         {
@@ -170,7 +189,7 @@ namespace Compiler
 /// <summary>
 /// De ser posible, convierte el token acutal de identificador a bool
 /// </summary> 
-        public void TryConvertToBool()
+        public void TryConvertToBool() 
         {
             if (Type == "iden")
             {
@@ -182,6 +201,8 @@ namespace Compiler
 
             }
         }
+
+        
 /// <summary>
 /// De ser posible, convierte el token acutal de identificador a constante
 /// </summary> 
@@ -203,6 +224,12 @@ namespace Compiler
 
             }
         }
+
+        public int Compare(object? x, object? y)
+        {
+            throw new NotImplementedException();
+        }
+
 
 
         /// <summary>
@@ -269,11 +296,12 @@ namespace Compiler
                 }
                 else if(input[i] == '\n')
                 {
-                   tlist.Add(currentToken);
-                        currentToken = new Token { Type = "NewLine", Content = "NewLine" };
+                   if (state != "none")
+                    {
                         tlist.Add(currentToken);
                         currentToken = null;
                         state = "none";
+                    }
                 }
                 else if (state == "strings")
                 {
@@ -454,8 +482,8 @@ namespace Compiler
             
             
             
-            
             state = "none";
+            
             return tlist;
         }
 

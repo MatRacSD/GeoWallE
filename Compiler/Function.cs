@@ -74,7 +74,7 @@ namespace Compiler
                 
                 if(name == "sin")
                 {
-                    Token ax = Parser.Parse(new List<Token>(){token_a},1).GetValue();
+                    Token ax = Parser.ParseObsolete(new List<Token>(){token_a},1).GetValue();
                     if(ax.Type != "number")
                     {
                         Error.errors.Add(new Error() { Type = "SEMANTIC ERROR: la funcion sin solo recibe tokens del tipo number" });
@@ -86,14 +86,14 @@ namespace Compiler
                 }
                 else if(name == "print")
                 {
-                   Token ax = Parser.Parse(new List<Token>(){token_a},1).GetValue();
+                   Token ax = Parser.ParseObsolete(new List<Token>(){token_a},1).GetValue();
                    Console.WriteLine(ax.Content);
                    return ax;
                    
                 }
                 else if(name == "cos")
                 {
-                    Token ax = Parser.Parse(new List<Token>(){token_a},1).GetValue();
+                    Token ax = Parser.ParseObsolete(new List<Token>(){token_a},1).GetValue();
                     if(ax.Type != "number")
                     {
                         Error.errors.Add(new Error() { Type = "SEMANTIC ERROR: la funcion cos solo recibe tokens del tipo number" });
@@ -103,7 +103,7 @@ namespace Compiler
                 }
                 else if(name == "exp")
                 {
-                    Token ax = Parser.Parse(new List<Token>(){token_a},1).GetValue();
+                    Token ax = Parser.ParseObsolete(new List<Token>(){token_a},1).GetValue();
                     if(ax.Type != "number")
                     {
                         Error.errors.Add(new Error() { Type = "SEMANTIC ERROR: la funcion exp solo recibe tokens del tipo number" });
@@ -114,7 +114,7 @@ namespace Compiler
 
                 else if(name == "sqrt")
                 {
-                    Token ax = Parser.Parse(new List<Token>(){token_a},1).GetValue();
+                    Token ax = Parser.ParseObsolete(new List<Token>(){token_a},1).GetValue();
                     if(ax.Type != "number")
                     {
                         Error.errors.Add(new Error() { Type = "SEMANTIC ERROR: la funcion sqrt solo recibe tokens del tipo number" });
@@ -146,7 +146,7 @@ namespace Compiler
                     }
                    }
 
-                   x = Math.Log(Parser.Parse(l2,1).GetValue().ToInt(),Parser.Parse(l1,1).GetValue().ToInt());
+                   x = Math.Log(Parser.ParseObsolete(l2,1).GetValue().ToInt(),Parser.ParseObsolete(l1,1).GetValue().ToInt());
 
 
                 }
@@ -174,14 +174,14 @@ namespace Compiler
             {
                 if(token.exp[i].Content == ",")
                 {
-                    var_assignation.Add(vars[aux],Parser.Parse(aux_list,1).GetValue());
+                    var_assignation.Add(vars[aux],Parser.ParseObsolete(aux_list,1).GetValue());
                     aux_list.Clear();
                     aux += 1;
                 }
                 else if(i == token.exp.Count - 1)
                 {
                     aux_list.Add(token.exp[i]);
-                     var_assignation.Add(vars[aux],Parser.Parse(aux_list,1).GetValue());
+                     var_assignation.Add(vars[aux],Parser.ParseObsolete(aux_list,1).GetValue());
                     aux_list.Clear();
                     aux += 1;
                 }
@@ -210,7 +210,7 @@ namespace Compiler
                  }
             }
 
-            return Parser.Parse(body,1).GetValue();
+            return Parser.ParseObsolete(body,1).GetValue();
 
             throw new ArgumentException();
         }

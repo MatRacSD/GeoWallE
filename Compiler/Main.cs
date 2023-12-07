@@ -79,7 +79,7 @@ public static class CompilerUtils
 
 
 
-            Node node = Parser.Parse(l2, 1);
+            NodeObsolete node = Parser.ParseObsolete(l2, 1);
 
             if (Error.errors.Count > 0)
             {
@@ -127,4 +127,6 @@ public static class CompilerUtils
         
 
     }
+
+    
 }
