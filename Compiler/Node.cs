@@ -1,3 +1,5 @@
+using System.Reflection.Metadata;
+
 namespace Compiler
 {
     /// <summary>
@@ -16,7 +18,7 @@ namespace Compiler
         public List<Token> tokenList = new();
         
         public abstract void Remplace(Dictionary<Token,Token> valuePairs);
-        public abstract Node Parse();
+        public abstract Node Parse(State state);
         public abstract  string GetType();
 
         public abstract object Clone();
@@ -28,7 +30,7 @@ namespace Compiler
     {
         public override object Clone()
         {
-            throw new NotImplementedException();
+            return new ParentesisNode(){tokenList = this.tokenList.Clone()};
         }
 
         public override string GetType()
@@ -36,7 +38,7 @@ namespace Compiler
             return "ParentesisNode";
         }
 
-        public override Node Parse()
+        public override Node Parse(State state)
         {
             throw new NotImplementedException();
         }
@@ -60,7 +62,7 @@ namespace Compiler
             return "UnparsedNode";
         }
 
-        public override Node Parse()
+        public override Node Parse(State state)
         {
             throw new NotImplementedException();
         }
@@ -89,7 +91,7 @@ namespace Compiler
             throw new NotImplementedException();
         }
 
-        public override Node Parse()
+        public override Node Parse(State state)
         {
             throw new NotImplementedException();
         }
@@ -109,9 +111,16 @@ namespace Compiler
     public class FunctionNode : Node
     {
         private readonly string Name;
+
+        private ParentesisNode parametros;
         public FunctionNode(string functionName)
         {
             Name = functionName;
+        }
+
+        public  void SetFunctionBody( List<Identificador> param, UnparsedNode functionBody)
+        {
+              
         }
 
         public override object Clone()
@@ -126,12 +135,18 @@ namespace Compiler
 
         public override string GetType()
         {
+            return "FunctionNode";
+        }
+
+        public override Node Parse(State state)
+        {
             throw new NotImplementedException();
         }
 
-        public override Node Parse()
+        
+        public void SetParameters(ParentesisNode param)
         {
-            throw new NotImplementedException();
+             parametros = (ParentesisNode)param.Clone();
         }
 
         public override void Remplace(Dictionary<Token, Token> valuePairs)
@@ -154,7 +169,7 @@ namespace Compiler
             throw new NotImplementedException();
         }
 
-        public override Node Parse()
+        public override Node Parse(State state)
         {
             throw new NotImplementedException();
         }
@@ -177,7 +192,7 @@ namespace Compiler
             throw new NotImplementedException();
         }
 
-        public override Node Parse()
+        public override Node Parse(State state)
         {
             throw new NotImplementedException();
         }
@@ -198,7 +213,7 @@ namespace Compiler
             throw new NotImplementedException();
         }
 
-        public override Node Parse()
+        public override Node Parse(State state)
         {
             throw new NotImplementedException();
         }
@@ -228,7 +243,7 @@ namespace Compiler
             return "IfElse";
         }
 
-        public override Node Parse()
+        public override Node Parse(State state)
         {
             throw new NotImplementedException();
         }
@@ -241,6 +256,10 @@ namespace Compiler
 
     public class BinaryOperationNode : Node
     {
+        public Node parsedLefthChild;
+        public Node parsedRightChild;
+        public List<Node> LeftChild = new();
+        public List<Node> RightChild = new();
         public override object Clone()
         {
             throw new NotImplementedException();
@@ -248,10 +267,38 @@ namespace Compiler
 
         public override string GetType()
         {
+            return "BinaryOperationNode";
+        }
+       
+
+        public override Node Parse(State state)
+        {
+            
+            parsedLefthChild = Parser.ParseLevel(LeftChild,1,state);
+            parsedRightChild = Parser.ParseLevel(RightChild,1,state);
+            return new NullNode();
+        }
+
+        public override void Remplace(Dictionary<Token, Token> valuePairs)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class NullNode : Node
+
+    {
+        public override object Clone()
+        {
             throw new NotImplementedException();
         }
 
-        public override Node Parse()
+        public override string GetType()
+        {
+            return "null";
+        }
+
+        public override Node Parse(State state)
         {
             throw new NotImplementedException();
         }
@@ -274,7 +321,7 @@ namespace Compiler
             throw new NotImplementedException();
         }
 
-        public override Node Parse()
+        public override Node Parse(State state)
         {
             throw new NotImplementedException();
         }
@@ -297,7 +344,7 @@ namespace Compiler
             throw new NotImplementedException();
         }
 
-        public override Node Parse()
+        public override Node Parse(State state)
         {
             throw new NotImplementedException();
         }
@@ -336,7 +383,7 @@ namespace Compiler
             return  "PointNode";
         }
 
-        public override Node Parse()
+        public override Node Parse(State state)
         {
             throw new NotImplementedException();
         }
@@ -352,7 +399,7 @@ namespace Compiler
         }
     }
 
-    public class LineDeclarationNode : Node
+    public class LineNode : Node
     {
         public override object Clone()
         {
@@ -364,7 +411,7 @@ namespace Compiler
             throw new NotImplementedException();
         }
 
-        public override Node Parse()
+        public override Node Parse(State state)
         {
             throw new NotImplementedException();
         }
@@ -387,7 +434,7 @@ namespace Compiler
             throw new NotImplementedException();
         }
 
-        public override Node Parse()
+        public override Node Parse(State state)
         {
             throw new NotImplementedException();
         }
@@ -410,7 +457,7 @@ namespace Compiler
             throw new NotImplementedException();
         }
 
-        public override Node Parse()
+        public override Node Parse(State state)
         {
             throw new NotImplementedException();
         }
@@ -433,7 +480,7 @@ namespace Compiler
             throw new NotImplementedException();
         }
 
-        public override Node Parse()
+        public override Node Parse(State state)
         {
             throw new NotImplementedException();
         }
@@ -446,6 +493,10 @@ namespace Compiler
 
     public class NumberNode : Node
     {
+        public NumberNode(Token token)
+        {
+            this.token = token.Clone();
+        }
         public override object Clone()
         {
             throw new NotImplementedException();
@@ -453,10 +504,10 @@ namespace Compiler
 
         public override string GetType()
         {
-            throw new NotImplementedException();
+            return "NumberNode";
         }
 
-        public override Node Parse()
+        public override Node Parse(State state)
         {
             throw new NotImplementedException();
         }
@@ -469,6 +520,8 @@ namespace Compiler
 
     public class ConstantNode : Node
     {
+        //private UnparsedNode unparsedConstantBody;
+        private  Node parseConstantBody;
         public ConstantNode(string constantName)
         {
             Name = constantName;
@@ -484,19 +537,28 @@ namespace Compiler
             throw new NotImplementedException();
         }
 
-        public override Node Parse()
+        
+
+        public override Node Parse(State state)
         {
             throw new NotImplementedException();
         }
 
         public override string GetType()
         {
-            throw new NotImplementedException();
+            return "ConstantNode";
+        }
+    
+        public void SetBody(List<Node> nodes, State state)
+        {
+           //UnparsedNode unparsedNode = new UnparsedNode(){tokenList = tokens.Clone()};
+           parseConstantBody = Parser.ParseLevel(nodes,1,state);
+           
         }
 
-        public override object Clone()
+        public override ConstantNode Clone()
         {
-            throw new NotImplementedException();
+            return this;
         }
 
         private readonly string Name;
@@ -514,7 +576,7 @@ namespace Compiler
             throw new NotImplementedException();
         }
 
-        public override Node Parse()
+        public override Node Parse(State state)
         {
             throw new NotImplementedException();
         }
@@ -539,7 +601,7 @@ namespace Compiler
             return "ErrorNode";
         }
 
-        public override Node Parse()
+        public override Node Parse(State state)
         {
             throw new NotImplementedException();
         }
@@ -556,13 +618,22 @@ namespace Compiler
         {
             throw new NotImplementedException();
         }
+        public string GetName()
+        {
+            return name;
+        }
+        private readonly string name;
+        public Identificador(string n)
+        {
+           name = n;
+        }
 
         public override string GetType()
         {
-            return "iden";
+            return "id";
         }
 
-        public override Node Parse()
+        public override Node Parse(State state)
         {
             throw new NotImplementedException();
         }

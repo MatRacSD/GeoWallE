@@ -20,7 +20,7 @@ namespace Compiler
             levels.Add(LV5);
             levels.Add(LV6);
             levels.Add(LV7);
-            
+
         }
 
         /// <summary>
@@ -37,7 +37,7 @@ namespace Compiler
             bool isLetInOpen = false;
             List<Node> mainNodes = new List<Node>(); //Representa los nodos raíz del programa
             List<Token> auxTokenList = new List<Token>();
-            
+
             for (int i = 0; i < tokens.Count; i++)
             {
                 if (tokens[i].Type == "Parnt")
@@ -78,6 +78,7 @@ namespace Compiler
                     }
                     else auxTokenList.Add(tokens[i]);
                 }
+                else auxTokenList.Add(tokens[i]);
             }
 
             //Se chequean algunos posibles errores
@@ -92,21 +93,22 @@ namespace Compiler
                 mainNodes = new List<Node>() { new ErrorNode() { Error = "falta in en let-in" } };
                 return mainNodes;
             }
-            else if(auxTokenList.Count > 0)
+            else if (auxTokenList.Count > 0)
             {
                 mainNodes = new List<Node>() { new ErrorNode() { Error = "falta ;" } };
                 return mainNodes;
             }
-            
-            
+
+
             List<Token> unasignedTokens = new();
             bool isParentesisOpen = false;
             List<Node> nodes = new();
-            
+
             foreach (MainNode node in mainNodes)
             {
                 if (node.GetType() == "MainNode")
                 {
+                    
                     for (int i = 0; i < node.tokenList.Count; i++)
                     {
 
@@ -118,8 +120,9 @@ namespace Compiler
                                 if (!isParentesisOpen)
                                 {
                                     isParentesisOpen = true;
+                                    if(unasignedTokens.Count > 0){
                                     nodes.Add(new UnparsedNode() { tokenList = unasignedTokens.Clone() });
-                                    unasignedTokens.Clear();
+                                    unasignedTokens = new();}
                                     continue;
                                 }
                                 unasignedTokens.Add(node.tokenList[i]);
@@ -134,8 +137,9 @@ namespace Compiler
                             else if (parentesisCount == 0)
                             {
                                 isParentesisOpen = false;
+                                
                                 nodes.Add(new ParentesisNode() { tokenList = unasignedTokens.Clone() });
-                                unasignedTokens.Clear();
+                                unasignedTokens = new();
                                 continue;
                             }
                             unasignedTokens.Add(node.tokenList[i]);
@@ -148,26 +152,38 @@ namespace Compiler
 
                     }
                     else if (unasignedTokens.Count > 0) nodes.Add(new UnparsedNode() { tokenList = unasignedTokens.Clone() });
-                    if (nodes.Count > 0) {
+                    if (nodes.Count > 0)
+                    {
                         //throw new Exception(nodes.Count.ToString());
                         ((MainNode)node).nodes = nodes;
-                        
-                        }
+
+                    }
                     nodes = new();
                     unasignedTokens.Clear();
                 }
-                
+
             }
 
-            
+
 
             return mainNodes;
         }
 
-        public static Node ParseLevel(List<Node> nodes, int parseLevel, State state)
+        public static Node ParseLevel(List<Node> inputNodes, int parseLevel, State state)
         {
+            
             string UN = "UnparsedNode";
             string PN = "ParentesisNode";
+            //throw new Exception("asdasdsda" + inputNodes[0].GetType() + ">>>" + inputNodes[0].tokenList.Count);
+            List<Node> nodes = new();
+            if(inputNodes == null)
+            {
+                return new NullNode();
+            }
+            for (int i = 0; i < inputNodes.Count; i++)
+            {
+                nodes.Add(inputNodes[i]);
+            }
             List<Node> nodes1 = new();
             for (int k = 0; k < 8; k++) // k es el parseLevel actual
             {
@@ -179,17 +195,34 @@ namespace Compiler
                     {
                         for (int i = 0; i < nodes.Count; i++) //iteracion por cada nodo
                         {
-                            if(nodes[i].GetType() == "ErrorNode") {nodes1.Add(nodes[i]); continue;}
-                            if (nodes[i].GetType() == UN || nodes[i].GetType() == PN)
+                            if (nodes[i].GetType() == "ErrorNode") { nodes1.Add(nodes[i]); continue; }
+                            if (nodes[i].GetType() == UN )
                             {
+                                List<Token> unusedToknes = new();
                                 for (int j = 0; j < nodes[i].tokenList.Count; j++) //iteracion por cada token del nodo
                                 {
+
                                     if (nodes[i].tokenList[j].Type == "iden") //Si el nodo actual es un identificador
                                     {
                                         if (state.IsReserved(nodes[i].tokenList[j].Content)) //Si es una palabra reservada
                                         {
+
                                             string reservedWord = nodes[i].tokenList[j].Content;
-                                            if (reservedWord == "if") //Se verifica si es el inicio de un nodo if-else
+                                            if (nodes[i].tokenList[j].Content == "draw")
+                                            {
+                                                List<Token> tokensToDraw = new();
+                                                for (int p = 1; p < nodes[i].tokenList.Count; p++)
+                                                {
+                                                    tokensToDraw.Add(nodes[i].tokenList[p]);
+                                                }
+                                                if (tokensToDraw.Count == 0) return new ErrorNode() { Error = "Se esperaba expresion to draw" };
+                                                UnparsedNode unparsedNode = new() { tokenList = tokensToDraw.Clone() };
+                                                DrawNode drawNode = new() { Childs = new Node[] { unparsedNode } };
+                                                drawNode.Parse(state);
+                                                nodes1.Add(drawNode);
+                                                break;
+                                            }
+                                            else if (reservedWord == "if") //Se verifica si es el inicio de un nodo if-else
                                             {
                                                 IfElseNode ifelseNode = new IfElseNode() { Childs = new Node[3] };
                                                 if (j != nodes[i].tokenList.Count - 1 || nodes.Count - 1 == i || nodes[i + 1].GetType() != "ParentesisNode")
@@ -237,7 +270,7 @@ namespace Compiler
                                                 }
                                                 ifelseNode.Childs[1] = new UnparsedNode() { tokenList = thenBody.Clone() };
                                                 ifelseNode.Childs[2] = new UnparsedNode() { tokenList = elseBody.Clone() };
-                                                ifelseNode.Parse();
+                                                ifelseNode.Parse(state);
                                                 nodes1.Add(ifelseNode);
                                                 i = i + 2;
                                                 break;
@@ -247,7 +280,7 @@ namespace Compiler
                                             else if (reservedWord == "let")
                                             {
                                                 List<Token> letinTokens = new();
-                                                LetInNode letInNode = new LetInNode(){Identificadores = new()};
+                                                LetInNode letInNode = new LetInNode() { Identificadores = new() };
                                                 for (int o = j + 1; o < nodes[i].tokenList.Count; o++)
                                                 {
                                                     letinTokens.Add(nodes[i].tokenList[o]);
@@ -265,89 +298,443 @@ namespace Compiler
                                                 int lastletMainNode = letMainNodes.Count - 1;
                                                 for (int o = 0; o < lastletMainNode; o++)
                                                 {
-                                                    if(letMainNodes[o].tokenList.Count < 3)
+                                                    if (letMainNodes[o].tokenList.Count < 3)
                                                     {
-                                                        return  new ErrorNode(){Error = "falta cuerpo del let"};
-                                      
+                                                        return new ErrorNode() { Error = "falta cuerpo del let" };
+
                                                     }
-                                                    else if(letMainNodes[o].tokenList[0].Type != "iden")
+                                                    else if (letMainNodes[o].tokenList[0].Type != "iden")
                                                     {
-                                                         return  new ErrorNode(){Error = "Se esperaba identificador  en expresion let-in"};
-                                      
+                                                        return new ErrorNode() { Error = "Se esperaba identificador  en expresion let-in" };
+
                                                     }
-                                                    else if(letMainNodes[o].tokenList[1].Content != "=")
+                                                    else if (letMainNodes[o].tokenList[1].Content != "=")
                                                     {
-                                                         return  new ErrorNode(){Error = "Se esperaba simbolo de asignación  en expresion let-in"};
-                                
+                                                        return new ErrorNode() { Error = "Se esperaba simbolo de asignación  en expresion let-in" };
+
                                                     }
 
-                                                    else 
+                                                    else
                                                     {
                                                         Token assignationTokens = letMainNodes[o].tokenList[0].Clone();
                                                         UnparsedNode node = new();
-                                                        
+
                                                         for (int h = 2; h < letMainNodes[o].tokenList.Count; h++)
                                                         {
                                                             node.tokenList.Add(letMainNodes[o].tokenList[h]);
                                                         }
-                                                        if(letInNode.Identificadores.ContainsKey(letMainNodes[o].tokenList[0]))
+                                                        if (letInNode.Identificadores.ContainsKey(letMainNodes[o].tokenList[0]))
                                                         {
-                                                             return  new ErrorNode(){Error = "Reasignación de la constante asignada: " + letMainNodes[o].tokenList[0]};
-                                      
+                                                            return new ErrorNode() { Error = "Reasignación de la constante asignada: " + letMainNodes[o].tokenList[0] };
+
                                                         }
-                                                        else letInNode.Identificadores.Add(assignationTokens,node);
+                                                        else letInNode.Identificadores.Add(assignationTokens, node);
                                                     }
-                                                    
+
                                                 }
                                                 letInNode.Childs = new Node[1];
                                                 letInNode.Childs[0] = letMainNodes.Last();
-                                                letInNode.Parse();
+                                                letInNode.Parse(state);
                                                 nodes1.Add(letInNode);
-                                                continue;
+                                                break;
                                             }
-                                            else if(reservedWord == "point")
-                                             {
+                                            else if (reservedWord == "point")
+                                            {
                                                 PointNode point;
-                                                 if(nodes[i].tokenList.Count < 2) return new ErrorNode() {Error = "Se esperaba identificador en declaracion de point"};
-                                                 else if(nodes[i].tokenList[1].Type != "iden") return new ErrorNode() {Error = "Se esperaba identificador en declaracion de point"};
-                                                 else if(nodes[i].tokenList.Count == 2)
-                                                 {
-                                                      point = new PointNode(nodes[i].tokenList[1].Content);
-                                                      
-                                                      nodes1.Add(point);
-                                                      continue;
-                                                 }
-                                                 else if(nodes[i].tokenList.Count > 3) return new ErrorNode() {Error = "Se esperaba expresion en parentesis"};
-                                                 else 
-                                                 {
-                                                    if(nodes.Count == i + 1) return new ErrorNode() {Error = "Se esperaba expresion entre parentesis"};
-                                                    else if(nodes[i + 1].GetType() != "ParentesisNode")return new ErrorNode() {Error = "Se esperaba expresion entre parentesis"};
-                                                    else 
+                                                if (nodes[i].tokenList.Count < 2) return new ErrorNode() { Error = "Se esperaba identificador en declaracion de point" };
+                                                else if (nodes[i].tokenList[1].Type != "iden") return new ErrorNode() { Error = "Se esperaba identificador en declaracion de point" };
+                                                else if (nodes[i].tokenList.Count == 2)
+                                                {
+                                                    if (state.pointsDeclared.Contains(nodes[i].tokenList[1].Content))
                                                     {
-                                                        throw new NotImplementedException();
+                                                        return new ErrorNode() { Error = "Redefinición del punto: " + nodes[i].tokenList[1].Content };
+                                                    }
+                                                    point = new PointNode(nodes[i].tokenList[1].Content);
+
+                                                    nodes1.Add(point);
+                                                    state.pointsDeclared.Add(nodes[i].tokenList[1].Content);
+                                                    break;
+                                                }
+                                                else if (nodes[i].tokenList.Count > 3) return new ErrorNode() { Error = "Se esperaba expresion en parentesis" };
+                                                else
+                                                {
+                                                    if (nodes.Count == i + 1) return new ErrorNode() { Error = "Se esperaba expresion entre parentesis" };
+                                                    else if (nodes.Count == i + 2) return new ErrorNode() { Error = "Declaración de punto inválida" };
+                                                    else if (nodes[i + 1].GetType() != "ParentesisNode") return new ErrorNode() { Error = "Se esperaba expresion entre parentesis" };
+                                                    else
+                                                    {
+                                                        throw new NotImplementedException("La asignacion de punto no esta implementada");
                                                         /// Aqui va la implementación de la asignación de punto
                                                     }
-                                                 }
-                                             }
-                                             else if(nodes[i].tokenList[0].Content == "draw")
-                                             {
-                                                
-                                             }
+                                                }
+
+
+                                            }
+                                            else if(reservedWord == "line")
+                                            {
+                                                LineNode lineNode;
+                                                if (nodes[i].tokenList.Count - 1< j + 1) return new ErrorNode() { Error = "Se esperaba identificador en declaracion de point" };
+                                                else if (nodes[i].tokenList[j + 1].Type != "iden") return new ErrorNode() { Error = "Se esperaba identificador en declaracion de point" };
+                                                if(!(nodes[i].tokenList.Count - 1 < j + 2) )
+                                                {
+                                                    if(nodes[i].tokenList[j + 2].Content == "=")
+                                                    {
+                                                        
+                                                    }
+                                                }
+                                            }
+
+
+
+
+                                        }
+                                        //Aqui termina la revision de las palabras reservadas
+                                        //Ahora se proceden a construir nodos de funciones , constantes e identificadores
+                                        else
+                                        {
+
+                                            //Se revisa que es lo que viene despues
+                                            if (nodes.Count > i + 1)
+                                            {
+                                                if (nodes[i].tokenList.Count == j + 1)
+                                                {
+
+                                                    if (nodes[i + 1].GetType() == PN) // Si es una llamada o declaracion de funcion
+                                                    {
+
+                                                        if (state.ConstantExist(nodes[i].tokenList[j].Content))
+                                                        {
+                                                            return new ErrorNode() { Error = "Ya existe una constante con ese nombre: " + nodes[i].tokenList[j].Content };
+                                                        }
+                                                        else if (state.FunctionExist(nodes[i].tokenList[j].Content)) //Se considera llamada de funcion definida
+                                                        {
+
+                                                            if (nodes.Count > i + 2) //Se revisa que no se esté redefiniendo
+                                                            {
+                                                                if (nodes[i + 2].GetType() == UN)
+                                                                {
+                                                                    if (nodes[i + 2].tokenList.Count > 0)
+                                                                    {
+                                                                        if (nodes[i + 2].tokenList[0].Content == "=")
+                                                                            return new ErrorNode() { Error = "redefinición de la función: " + nodes[i].tokenList[j].Content };
+
+
+
+                                                                    }
+                                                                }
+                                                            }
+
+
+                                                        }
+
+                                                        else if (nodes.Count > i + 2) //Definicion de funcion
+                                                        {
+
+                                                            FunctionNode function = new FunctionNode(nodes[i].tokenList[j].Content);
+                                                            UnparsedNode functionBody = new();
+                                                            List<Identificador> funcParams = new();
+                                                            bool expectedId = true; //Verdadero si se espera identificador y falso si se espera coma
+                                                            if (nodes[i + 2].GetType() == UN)
+                                                            {
+                                                                if (nodes[i + 2].tokenList.Count > 0)
+                                                                {
+                                                                    if (nodes[i + 2].tokenList[0].Content == "=") //Se guarda el cuerpo de la funcion
+                                                                    {
+
+                                                                        for (int g = 1; g < nodes[i + 2].tokenList.Count; g++)
+                                                                        {
+                                                                            functionBody.tokenList.Add(nodes[i + 2].tokenList[g]);
+                                                                        }
+
+                                                                        for (int g = 0; g < nodes[i + 1].tokenList.Count; g++)
+                                                                        {
+                                                                            if (expectedId)
+                                                                            {
+                                                                                if (nodes[i + 1].tokenList[g].Type != "iden")
+                                                                                {
+                                                                                    return new ErrorNode() { Error = "se esperaba identificador en declaracion de funcion" };
+                                                                                }
+                                                                                else funcParams.Add(new Identificador(nodes[i + 1].tokenList[g].Content));
+                                                                                expectedId = false;
+                                                                                continue;
+                                                                            }
+                                                                            else if (nodes[i + 1].tokenList[g].Content != ",")
+                                                                            {
+                                                                                return new ErrorNode() { Error = "Se esperaba ," };
+                                                                            }
+                                                                            expectedId = true;
+                                                                        }
+
+                                                                        function.SetFunctionBody(funcParams, functionBody);
+
+                                                                        state.activeFunctions.Add(function);
+                                                                        nodes1.Add(function);
+                                                                        i += 2;
+
+                                                                        break; // Se guarda como definicion de funcincion
+                                                                    }
+
+                                                                    //return new ErrorNode(){Error = "redefinición de la función: " + nodes[i].tokenList[j].Content};
+                                                                }
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            FunctionNode functionNode = new FunctionNode(nodes[i].tokenList[j].Content);
+                                                            functionNode.SetParameters((ParentesisNode)nodes[i + 1]);
+                                                            nodes1.Add(functionNode);
+                                                            i += 1;
+                                                            if (unusedToknes.Count > 0)
+                                                            {
+                                                                nodes1.Add(new UnparsedNode() { tokenList = unusedToknes.Clone() });
+                                                            }
+                                                            break; ; //Se guarda como una llamada de funcion
+                                                        }
+                                                    }
+                                                    else    //Entonces es una llamada de constante , declaracion de constante o identificador
+                                                    {
+
+                                                        if (state.FunctionExist(nodes[i].tokenList[j].Content))
+                                                        {
+                                                            return new ErrorNode() { Error = "Ya existe una function con ese nombre: " + nodes[i].tokenList[j].Content };
+                                                        }
+                                                        else if (state.ConstantExist(nodes[i].tokenList[j].Content))
+                                                        {
+                                                            nodes1.Add(state.GetConstantNode(nodes[i].tokenList[j].Content));
+                                                            break;
+
+                                                        }
+                                                        else if (nodes[i].tokenList.Count > j + 1) ///Declaración de constante 
+                                                        {
+
+                                                            if (nodes[i].tokenList[j + 1].Content == "=")
+                                                            {
+                                                                if (state.ConstantExist(nodes[i].tokenList[j].Content))
+                                                                {
+                                                                    return new ErrorNode() { Error = "Ya existe una constante con ese nombre: " + nodes[i].tokenList[j].Content };
+                                                                }
+
+                                                                ConstantNode constantNode = new ConstantNode(nodes[i].tokenList[j].Content);
+                                                                List<Token> tokens = new();
+                                                                List<Node> nodes2 = new();
+                                                                for (int g = i + 1; g < nodes.Count; g++)
+                                                                {
+                                                                    nodes2.Add(nodes[g]);
+                                                                }
+                                                                for (int g = j + 2; g < nodes[i].tokenList.Count; g++)
+                                                                {
+                                                                    tokens.Add(nodes[i].tokenList[g]);
+                                                                }
+
+                                                                UnparsedNode unparsedNode = new() { tokenList = tokens.Clone() };
+                                                                nodes2.Insert(0, unparsedNode);
+                                                                constantNode.SetBody(nodes2, state);
+                                                                nodes1.Add(constantNode);
+                                                                i = nodes.Count() - 1;
+                                                                state.constantNodes.Add(constantNode);
+
+                                                                break;
+                                                            }
+
+
+
+                                                        }
+                                                        nodes1.Add(new Identificador(nodes[i].tokenList[j].Content));
+                                                    }
+                                                }
+                                            }
+                                            else
+                                            {
+                                                //Entonces es una llamada de constante
+
+                                                if (state.FunctionExist(nodes[i].tokenList[j].Content))
+                                                {
+                                                    return new ErrorNode() { Error = "Ya existe una function con ese nombre: " + nodes[i].tokenList[j].Content };
+                                                }
+                                                else if (state.ConstantExist(nodes[i].tokenList[j].Content))
+                                                {
+                                                    nodes1.Add(state.GetConstantNode(nodes[i].tokenList[j].Content));
+                                                    break;
+
+                                                }
+                                                else if (nodes[i].tokenList.Count > j + 1) ///Declaración de constante 
+                                                {
+
+                                                    if (nodes[i].tokenList[j + 1].Content == "=")
+                                                    {
+                                                        if (state.ConstantExist(nodes[i].tokenList[j].Content))
+                                                        {
+                                                            return new ErrorNode() { Error = "Ya existe una constante con ese nombre: " + nodes[i].tokenList[j].Content };
+                                                        }
+                                                        ConstantNode constantNode = new ConstantNode(nodes[i].tokenList[j].Content);
+                                                        List<Token> tokens = new();
+                                                        List<Node> nodes2 = new();
+                                                        for (int g = i + 1; g < nodes.Count; g++)
+                                                        {
+                                                            nodes2.Add(nodes[g]);
+                                                        }
+                                                        for (int g = j + 2; g < nodes[i].tokenList.Count; g++)
+                                                        {
+                                                            tokens.Add(nodes[i].tokenList[g]);
+                                                        }
+
+                                                        UnparsedNode unparsedNode = new() { tokenList = tokens.Clone() };
+                                                        nodes2.Insert(0, unparsedNode);
+                                                        constantNode.SetBody(nodes2, state);
+                                                        nodes1.Add(constantNode);
+                                                        i = nodes.Count() - 1;
+                                                        state.constantNodes.Add(constantNode);
+                                                        break;
+                                                    }
+
+
+
+                                                }
+                                                if (unusedToknes.Count > 0)
+                                                {
+                                                    nodes1.Add(new UnparsedNode() { tokenList = unusedToknes.Clone() });
+                                                }
+                                                nodes1.Add(new Identificador(nodes[i].tokenList[j].Content));
+                                                unusedToknes = new();
+
+                                            }
                                         }
 
                                     }
+                                    unusedToknes.Add(nodes[i].tokenList[j]);
 
                                 }
+                                if (unusedToknes.Count > 0)
+                                {
+                                    nodes1.Add(new UnparsedNode() { tokenList = unusedToknes.Clone() });
+                                }
                             }
+                            else nodes1.Add(nodes[i]);                       
+                        }
+
+                     
+                        nodes = nodes1;
+                        nodes1 = new();
+                        
+                    }
+                }
+                else if(k < 7)
+                {
+                   //throw new Exception("REPINGAAAA -->>" + nodes.Count  + " >->" + nodes[0].GetType());
+                    bool nodeAdded = false;
+                    List<Node> auxiliarNodeList = new();
+                    List<Token> auxiliarTokensList = new();
+                    BinaryOperationNode? binaryOP = null;
+                    for (int i = 0; i < nodes.Count; i++)
+                    {
+                        if (nodes[i].GetType() == "ParentesisNode")
+                        {
+                            //throw new Exception("chupachupa -->>" + nodes.Count + " >-<" + nodes[i].tokenList.Count );
+                            auxiliarNodeList.Add(ParseLevel(new List<Node> { new UnparsedNode() { tokenList = nodes[i].tokenList.Clone() } }, 1, state));
+                            //throw new Exception("amaterasu -->> " + auxiliarNodeList.Last().GetType());
+                            continue;
+                        }
+                        else if (nodes[i].GetType() == "UnparsedNode")
+                        {
+                            for (int j = 0; j < nodes[i].tokenList.Count; j++)
+                            {
+                                 
+                                if (levels[k].Contains(nodes[i].tokenList[j].Content))
+                                {
+                                     
+                                    
+                                    if (binaryOP == null)
+                                    {
+                                        nodeAdded = true;
+                                        binaryOP = new();
+                                        if (auxiliarTokensList.Count > 0)
+                                        {
+                                            auxiliarNodeList.Add(new UnparsedNode() { tokenList = auxiliarTokensList.Clone() });
+                                            auxiliarTokensList = new();
+                                        }
+                                        binaryOP = new() { LeftChild = auxiliarNodeList };
+                                        auxiliarNodeList = new();
+                                    }
+                                    else
+                                    {
+                                        nodeAdded = true;
+                                        binaryOP.RightChild = auxiliarNodeList;
+                                        auxiliarNodeList = new();
+                                        BinaryOperationNode auxiliarBinaryOP = binaryOP;
+                                        binaryOP = new() { LeftChild = new List<Node>(){auxiliarBinaryOP} };
+                                    }
+                                }
+                                else
+                                {
+                                    
+                                    auxiliarTokensList.Add(nodes[i].tokenList[j]);
+                                }
+                            }
+                            
+                        }
+                        if(!nodeAdded)
+                        {
+                            auxiliarNodeList.Add(nodes[i]);
+                        }
+                        nodeAdded = false;
+                        
+                    }
+                    if(binaryOP != null)
+                    {
+                        binaryOP.RightChild = auxiliarNodeList;
+                        binaryOP.Parse(state);
+                        auxiliarNodeList = new();
+                        nodes1.Add(binaryOP);
+                    }
+                    else 
+                    {
+                        if(auxiliarNodeList.Count > 0)
+                        {
+                            
+                            foreach (Node item in auxiliarNodeList)
+                            {
+                                nodes1.Add(item);
+                            }
+                        }
+                    }
+
+                    nodes = nodes1;
+                        nodes1 = new();
+                }
+
+                else if(k == 7)
+                {
+                    for (int i = 0; i < nodes.Count; i++)
+                    {
+                        if(nodes[i].GetType() == UN)
+                        {
+                            
+                            if(nodes[i].tokenList != null && nodes[i].tokenList.Count == 1)
+                            {
+                                if(nodes[i].tokenList[0].Type == "number")
+                                {
+                                    nodes1.Add(new NumberNode(nodes[i].tokenList[0]));
+                                }
+                            }
+
                         }
                     }
                 }
             }
-            if(!(nodes1.Count > 1 && nodes1.Count == 0))
+            if (!(nodes.Count > 1 || nodes.Count == 0))
             {
-                return nodes1[0];
+                return nodes[0];
             }
-             return new ErrorNode(){Error = "Undhandled Exception At Parsing"};
+            else if(nodes.Count > 1)
+            {
+                 string errors = "";
+                 foreach (Node item in nodes)
+                 {
+                    errors += "nodo -->>"+ item.GetType() + "\n";
+                 }
+                 return new ErrorNode() { Error = errors};
+            }
+            return new ErrorNode() { Error = "Undhandled Exception At Parsing 0 elements" };
 
 
         }

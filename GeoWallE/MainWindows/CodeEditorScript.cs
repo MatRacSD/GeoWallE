@@ -67,6 +67,7 @@ public partial class CodeEditorScript : CodeEdit
 				sprite.Scale = new Vector2(0.01f,0.01f);
 				plane.AddChild(sprite);
 			}
+			outputConsole.Text += "Hay un total de constantes: "+state.constantNodes.Count;
 			delayTimer.Stop();
 			delayTimer.Start();
 			
