@@ -8,9 +8,7 @@ using System.Threading.Tasks.Dataflow;
 namespace Compiler
 {
 
-    /// <summary>
-    /// Representa los objetos que constituyen la entrada del usuario
-    /// </summary>
+    
     public class Token
     {
         public TokenType Type { get; set; }
@@ -265,7 +263,7 @@ namespace Compiler
             }
             private Token ReadString()
             {
-                int start = ++position; // Skip opening quote
+                int start = ++position; 
                 while (position < input.Length && input[position] != '"')
                 {
                     position++;
@@ -273,11 +271,11 @@ namespace Compiler
 
                 if (position >= input.Length)
                 {
-                    throw new Exception("Unterminated string literal.");
+                    throw new Exception("Unterminated string");
                 }
 
                 string value = input.Substring(start, position - start);
-                position++; // Skip closing quote
+                position++; 
                 return new Token { Type = TokenType.String, Value = value };
 
             }
@@ -300,10 +298,7 @@ namespace Compiler
         {
             return tokens[index++];
         }
-        public Token PeekActual()
-        {
-            return tokens[index];
-        }
+       
 
         public Token Peek()
         {
@@ -328,7 +323,7 @@ namespace Compiler
                 }
                 if (p == 0 && i != index)
                 {
-                    // throw new Exception("amaterasu-->>" + tokens[i].Type);
+                    
                     if (tokens[i].Type == TokenType.Equals)
                     {
                         return true;

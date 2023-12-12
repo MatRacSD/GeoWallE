@@ -7,83 +7,94 @@ using System.IO;
 
 namespace Compiler
 {
-
+    /// <summary>
+    /// Clase principal del nodo
+    /// </summary>
     public abstract class Node : ICloneable
     {
         public abstract object Clone();
 
         public abstract Node Evaluate(State state);
-        
+
     }
-     
-    
+    /// <summary>
+    /// Nodo que contiene el archivo a importar
+    /// </summary>
+
     public class ImportNode : Node
     {
         public string Path { get; set; }
 
         public override object Clone()
         {
-            return new ImportNode(){Path = Path};
+            return new ImportNode() { Path = Path };
         }
 
         public override Node Evaluate(State state)
         {
-            if(!state.imported.Contains(Path))
+            if (!state.imported.Contains(Path))
             {
                 state.imported.Add(Path);
                 state.Run(ReadFile(Path));
             }
 
-            
+
             return new NullNode();
         }
         public string ReadFile(string filename)
-    {
-        if(File.Exists(filename))
         {
-            return File.ReadAllText(filename);
+            if (File.Exists(filename))
+            {
+                return File.ReadAllText(filename);
+            }
+            else
+            {
+                throw new FileNotFoundException("File not found: " + filename);
+            }
         }
-        else
-        {
-            throw new FileNotFoundException("File not found: " + filename);
-        }  
     }
-    }
-
+    /// <summary>
+    /// Nodo que contiene una declaracion de secuencia
+    /// </summary>
     public class SequencDeclarationNode : Node
     {
         public List<Token> constants = new();
-        public Node body {get; set;}
+        public Node body { get; set; }
 
         public override object Clone()
         {
-            return new SequencDeclarationNode(){constants = constants,body = (Node)body.Clone()};
+            return new SequencDeclarationNode() { constants = constants, body = (Node)body.Clone() };
         }
 
         public override Node Evaluate(State state)
         {
-            if(body.Evaluate(state).GetType().ToString() != "Compiler.SequenceNode")
+            if (body.Evaluate(state).GetType().ToString() != "Compiler.SequenceNode")
             {
                 throw new Exception("Expected Sequence at sequence constants declarations");
             }
-            else{
+            else
+            {
                 SequenceNode seq = (SequenceNode)body.Evaluate(state);
                 for (int i = 0; i < constants.Count; i++)
                 {
-                    if(constants[i].Type == TokenType.GuionBajo)
+                    if (constants[i].Type == TokenType.GuionBajo)
                     {
                         continue;
                     }
-                    else{
-                        if(i >= seq.nodes.Count)
-                        state.AddConstant(new(){Name = constants[i].Value, Value = new UndefinedNode()});
-                        else state.AddConstant(new(){Name = constants[i].Value, Value = seq.nodes[i]});
+                    else
+                    {
+                        if (i >= seq.nodes.Count)
+                            state.AddConstant(new() { Name = constants[i].Value, Value = new UndefinedNode() });
+                        else state.AddConstant(new() { Name = constants[i].Value, Value = seq.nodes[i] });
                     }
                 }
             }
             return new NullNode();
         }
     }
+    /// <summary>
+    /// Nodo que contiene una declaracion de punto
+    /// </summary>
     public class PointDeclarationNode : Node
     {
         private PointDeclarationNode()
@@ -104,15 +115,15 @@ namespace Compiler
 
         public override object Clone()
         {
-            return new PointDeclarationNode(){point = (PointNode)point.Clone()};
+            return new PointDeclarationNode() { point = (PointNode)point.Clone() };
         }
     }
     public class PointNode : Node
     {
-      private PointNode()
-      {
+        private PointNode()
+        {
 
-      }
+        }
         public string pointName;
         public double xValue;
         public double yValue;
@@ -143,10 +154,12 @@ namespace Compiler
 
         public override object Clone()
         {
-            return new PointNode(){pointName = pointName, xValue = xValue, yValue = yValue};
+            return new PointNode() { pointName = pointName, xValue = xValue, yValue = yValue };
         }
     }
-
+    /// <summary>
+    /// Nodo que contiene el color///NO IMPLEMENTADO
+    /// </summary>
 
     public class ColorNode : Node
     {
@@ -154,7 +167,7 @@ namespace Compiler
 
         public override object Clone()
         {
-            return new ColorNode(){Id = Id};
+            return new ColorNode() { Id = Id };
         }
 
         public override Node Evaluate(State state)
@@ -162,14 +175,16 @@ namespace Compiler
             throw new NotImplementedException();
         }
     }
-
+    /// <summary>
+    /// Nodo que contiene el valor de una medida
+    /// </summary>
     public class MeasureNode : Node
     {
         public double mValue;
 
         public override object Clone()
         {
-            return new MeasureNode(){mValue = mValue};
+            return new MeasureNode() { mValue = mValue };
         }
 
         public override Node Evaluate(State state)
@@ -177,7 +192,9 @@ namespace Compiler
             return new NumberNode() { Value = mValue };
         }
     }
-
+    /// <summary>
+    /// Nodo que contiene objeto a pintar
+    /// </summary>
     public class DrawNode : Node
     {
         public DrawNode()
@@ -189,15 +206,15 @@ namespace Compiler
 
         public override object Clone()
         {
-            return new DrawNode(){figToDraw = figToDraw, label = label};
+            return new DrawNode() { figToDraw = figToDraw, label = label };
         }
 
         public override Node Evaluate(State state)
         {
-            if(state.GetConstant(figToDraw).Value.Evaluate(state).GetType().ToString() == "Compiler.SequenceNode")
+            if (state.GetConstant(figToDraw).Value.Evaluate(state).GetType().ToString() == "Compiler.SequenceNode")
             {
                 SequenceNode sequenceNode = (SequenceNode)state.GetConstant(figToDraw).Value.Evaluate(state);
-                if(((SequenceNode)sequenceNode.Evaluate(state)).Type != "undefined")
+                if (((SequenceNode)sequenceNode.Evaluate(state)).Type != "undefined")
                 {
                     for (int i = 0; i < sequenceNode.count.Value; i++)
                     {
@@ -205,12 +222,14 @@ namespace Compiler
                     }
                 }
             }
-           else  state.AddToDraw(state.GetConstant(figToDraw).Value.Evaluate(state));
+            else state.AddToDraw(state.GetConstant(figToDraw).Value.Evaluate(state));
 
             return new NullNode();
         }
     }
-
+    /// <summary>
+    /// Nodo que contiene la declaracion de una funcion
+    /// </summary>
     public class FunctionDeclarationNode : Node
     {
         public string Name { get; set; }
@@ -219,7 +238,7 @@ namespace Compiler
 
         public override object Clone()
         {
-            return new FunctionDeclarationNode(){Name = Name,Parameters = Parameters,Body = (Node)Body.Clone()};
+            return new FunctionDeclarationNode() { Name = Name, Parameters = Parameters, Body = (Node)Body.Clone() };
         }
 
         public override Node Evaluate(State state)
@@ -247,7 +266,9 @@ namespace Compiler
         }
 
     }
-
+    /// <summary>
+    /// Nodo que contiene una llamada a una funcion
+    /// </summary>
     public class FunctionCallNode : Node
     {
         public string Name { get; set; }
@@ -260,7 +281,7 @@ namespace Compiler
             {
                 nodesTemp.Add((Node)item.Clone());
             }
-            return new FunctionCallNode(){Name = Name, Arguments = nodesTemp};
+            return new FunctionCallNode() { Name = Name, Arguments = nodesTemp };
         }
 
         public override Node Evaluate(State state)
@@ -307,19 +328,22 @@ namespace Compiler
             }
         }
     }
+    /// <summary>
+    /// Nodo que contiene una secuencia
+    /// </summary>
     public class SequenceNode : Node
     {
         public List<Node> nodes = new();
         public string Type = "undefined";
-        public NumberNode count{get => new NumberNode(){Value = nodes.Count};}
+        public NumberNode count { get => new NumberNode() { Value = nodes.Count }; }
 
-        public void Add(Node node,State state)
+        public void Add(Node node, State state)
         {
-            
-                nodes.Add(node);
-                
-            
-            
+
+            nodes.Add(node);
+
+
+
         }
 
         public override object Clone()
@@ -329,26 +353,29 @@ namespace Compiler
             {
                 nodesTemp.Add((Node)item.Clone());
             }
-            return new SequenceNode(){nodes = nodesTemp};
+            return new SequenceNode() { nodes = nodesTemp };
         }
 
         public override Node Evaluate(State state)
         {
             for (int i = 0; i < nodes.Count; i++)
             {
-                if(i == 0)
+                if (i == 0)
                 {
                     Type = nodes[0].Evaluate(state).GetType().ToString();
                 }
-                else{
-                    if(nodes[i].Evaluate(state).GetType().ToString() != Type)
-                    throw new Exception("A sequence must be of the same type, Expected: " + Type + "--Got: "+nodes[i].Evaluate(state).GetType());
+                else
+                {
+                    if (nodes[i].Evaluate(state).GetType().ToString() != Type)
+                        throw new Exception("A sequence must be of the same type, Expected: " + Type + "--Got: " + nodes[i].Evaluate(state).GetType());
                 }
             }
             return this;
         }
     }
-
+    /// <summary>
+    /// Nodo que contiene una declaracion de constante
+    /// </summary>
     public class ConstantDeclarationNode : Node
     {
         public string Name { get; set; }
@@ -356,7 +383,7 @@ namespace Compiler
 
         public override object Clone()
         {
-            return new ConstantDeclarationNode(){Name = Name, Value = (Node)Value.Clone()};
+            return new ConstantDeclarationNode() { Name = Name, Value = (Node)Value.Clone() };
         }
 
         public override Node Evaluate(State state)
@@ -366,14 +393,16 @@ namespace Compiler
             return new NullNode();
         }
     }
-
+    /// <summary>
+    /// Nodo que contiene una llamada a una constante
+    /// </summary>
     public class ConstantCallNode : Node
     {
         public string Name { get; set; }
 
         public override object Clone()
         {
-            return new ConstantCallNode(){Name = Name};
+            return new ConstantCallNode() { Name = Name };
         }
 
         public override Node Evaluate(State state)
@@ -382,17 +411,19 @@ namespace Compiler
             Node result = (Node)constD.Value.Clone();
             return (Node)result.Evaluate(state).Clone();
         }
-        //public Node Value { get; set; }
+
     }
 
-
+    /// <summary>
+    /// Nodo que contiene un numero
+    /// </summary>
     public class NumberNode : Node
     {
         public double Value { get; set; }
 
         public override object Clone()
         {
-            return new NumberNode(){Value = Value};
+            return new NumberNode() { Value = Value };
         }
 
         public override Node Evaluate(State state)
@@ -400,6 +431,9 @@ namespace Compiler
             return this;
         }
     }
+    /// <summary>
+    /// Nodo que contiene un segmento
+    /// </summary>
     public class SegmentNode : Node
 
     {
@@ -426,9 +460,12 @@ namespace Compiler
 
         public override object Clone()
         {
-            return new SegmentNode(lineName,(PointNode)pointA.Clone(),(PointNode)pointB.Clone());
+            return new SegmentNode(lineName, (PointNode)pointA.Clone(), (PointNode)pointB.Clone());
         }
     }
+    /// <summary>
+    /// Nodo que contiene una declaracion de segmento
+    /// </summary>
     public class SegmentDeclarationNode : Node
     {
         SegmentNode line;
@@ -452,6 +489,9 @@ namespace Compiler
             return new NullNode();
         }
     }
+    /// <summary>
+    /// Nodo que contiene un rayo
+    /// </summary>
     public class RayNode : Node
 
     {
@@ -478,9 +518,12 @@ namespace Compiler
 
         public override object Clone()
         {
-            return new RayNode(lineName,(PointNode)pointA.Clone(),(PointNode)pointB.Clone());
+            return new RayNode(lineName, (PointNode)pointA.Clone(), (PointNode)pointB.Clone());
         }
     }
+    /// <summary>
+    /// Nodo que contiene una declaracion de rayo
+    /// </summary>
     public class RayDeclarationNode : Node
     {
         RayNode ray;
@@ -504,6 +547,9 @@ namespace Compiler
             return new NullNode();
         }
     }
+    /// <summary>
+    /// Nodo que contiene una linea
+    /// </summary>
     public class LineNode : Node
 
     {
@@ -530,9 +576,12 @@ namespace Compiler
 
         public override object Clone()
         {
-            return new LineNode(lineName,(PointNode)pointA.Clone(),(PointNode)pointB.Clone());
+            return new LineNode(lineName, (PointNode)pointA.Clone(), (PointNode)pointB.Clone());
         }
     }
+    /// <summary>
+    /// Nodo que contiene  una declaracion de linea
+    /// </summary>
     public class LineDeclarationNode : Node
     {
         LineNode line;
@@ -557,6 +606,9 @@ namespace Compiler
             return new NullNode();
         }
     }
+    /// <summary>
+    /// Nodo que contiene un circulo
+    /// </summary>
     public class CircleNode : Node
     {
         public string Name;
@@ -578,7 +630,7 @@ namespace Compiler
 
         public override object Clone()
         {
-            return new CircleNode(Name,(PointNode)center.Clone(),(NumberNode)radio.Clone());
+            return new CircleNode(Name, (PointNode)center.Clone(), (NumberNode)radio.Clone());
         }
 
         public override Node Evaluate(State state)
@@ -586,11 +638,14 @@ namespace Compiler
             return this;
         }
     }
+    /// <summary>
+    /// Nodo que contiene una declaracion de circulo
+    /// </summary>
     public class CircleDeclarationNode : Node
     {
         private CircleDeclarationNode(CircleNode Circle)
         {
-circle = Circle;
+            circle = Circle;
         }
         public CircleDeclarationNode(string Name)
         {
@@ -608,6 +663,9 @@ circle = Circle;
             return new CircleDeclarationNode((CircleNode)circle.Clone());
         }
     }
+    /// <summary>
+    /// Nodo que contiene un arco
+    /// </summary>
     public class ArcNode : Node
     {
         public string Name;
@@ -636,7 +694,7 @@ circle = Circle;
 
         public override object Clone()
         {
-            return new ArcNode(Name,(PointNode)center.Clone(),(PointNode)p1.Clone(),(PointNode)p2.Clone(),(NumberNode)radio.Clone());
+            return new ArcNode(Name, (PointNode)center.Clone(), (PointNode)p1.Clone(), (PointNode)p2.Clone(), (NumberNode)radio.Clone());
         }
 
         public override Node Evaluate(State state)
@@ -644,14 +702,17 @@ circle = Circle;
             return this;
         }
     }
+    /// <summary>
+    /// Nodo que contiene una declaracion de arco
+    /// </summary>
     public class ArcDeclarationNode : Node
     {
-         public ArcNode arc;
+        public ArcNode arc;
         private ArcDeclarationNode(ArcNode arcNode)
         {
             arc = arcNode;
         }
-       
+
         public ArcDeclarationNode(string arcName)
         {
             arc = new(arcName);
@@ -668,6 +729,9 @@ circle = Circle;
             return new NullNode();
         }
     }
+    /// <summary>
+    /// Nodo que contiene una operacion binaria
+    /// </summary>
     public class BinaryOperationNode : Node
     {
         public Node Left { get; set; }
@@ -676,17 +740,19 @@ circle = Circle;
 
         public override object Clone()
         {
-            return new BinaryOperationNode(){Left = (Node)Left.Clone(),Operator = Operator, Right = (Node)Right.Clone()};
+            return new BinaryOperationNode() { Left = (Node)Left.Clone(), Operator = Operator, Right = (Node)Right.Clone() };
         }
 
         public override Node Evaluate(State state)
         {
-            
+
 
             return Operations.BinaryOperation(Left.Evaluate(state), Right.Evaluate(state), Operator);
         }
     }
-
+    /// <summary>
+    /// Nodo que contiene una operacion binaria
+    /// </summary>
     public class UnaryOperationNode : Node
     {
         public TokenType Operator { get; set; }
@@ -694,7 +760,7 @@ circle = Circle;
 
         public override object Clone()
         {
-            return new UnaryOperationNode(){Operator = Operator, Operand = (Node)Operand.Clone()};
+            return new UnaryOperationNode() { Operator = Operator, Operand = (Node)Operand.Clone() };
         }
 
         public override Node Evaluate(State state)
@@ -702,19 +768,21 @@ circle = Circle;
             return Operations.UnaryOperation(Operand.Evaluate(state), Operator);
         }
     }
-
+    /// <summary>
+    /// Nodo principal que contiene los statemes
+    /// </summary>
     public class BlockNode : Node
     {
-        public List<Node> statements{get;set;}
+        public List<Node> statements { get; set; }
 
         public override object Clone()
         {
             List<Node> statementsNodes = new();
             foreach (var item in statements)
             {
-              statementsNodes.Add((Node)item.Clone());   
+                statementsNodes.Add((Node)item.Clone());
             }
-            return new BlockNode(){statements = statementsNodes};
+            return new BlockNode() { statements = statementsNodes };
         }
 
         public override Node Evaluate(State state)
@@ -726,6 +794,9 @@ circle = Circle;
             return new NullNode();
         }
     }
+    /// <summary>
+    /// Nodo que contiene una expresion let-in
+    /// </summary>
     public class LetInNode : Node
     {
         public List<ConstantDeclarationNode> Declarations { get; set; }
@@ -738,7 +809,7 @@ circle = Circle;
             {
                 declarationNodes.Add((ConstantDeclarationNode)item.Clone());
             }
-            return new LetInNode(){Declarations = declarationNodes, Body = (Node)Body.Clone()};
+            return new LetInNode() { Declarations = declarationNodes, Body = (Node)Body.Clone() };
         }
 
         public override Node Evaluate(State state)
@@ -755,14 +826,16 @@ circle = Circle;
             return node;
         }
     }
-
+    /// <summary>
+    /// Nodo que contiene un error
+    /// </summary>
     public class ErrorNode : Node
     {
         public string Error;
 
         public override object Clone()
         {
-            return new ErrorNode(){Error = Error};
+            return new ErrorNode() { Error = Error };
         }
 
         public override Node Evaluate(State state)
@@ -770,7 +843,9 @@ circle = Circle;
             return this;
         }
     }
-
+    /// <summary>
+    /// Nodo que contiene una expresion if-else
+    /// </summary>
     public class IfElseNode : Node
     {
         public Node Condition { get; set; }
@@ -779,7 +854,7 @@ circle = Circle;
 
         public override object Clone()
         {
-            return new IfElseNode(){Condition = (Node)Condition.Clone(),ThenBranch = (Node)ThenBranch.Clone(),ElseBranch = (Node)ElseBranch.Clone()};
+            return new IfElseNode() { Condition = (Node)Condition.Clone(), ThenBranch = (Node)ThenBranch.Clone(), ElseBranch = (Node)ElseBranch.Clone() };
         }
 
         public override Node Evaluate(State state)
@@ -791,6 +866,9 @@ circle = Circle;
             else return ThenBranch.Evaluate(state);
         }
     }
+    /// <summary>
+    /// Nodo que se trata como nulo
+    /// </summary>
     public class NullNode : Node
 
     {
@@ -804,7 +882,9 @@ circle = Circle;
             return this;
         }
     }
-
+    /// <summary>
+    /// Nodo que se trata como undefined
+    /// </summary>
     public class UndefinedNode : Node
     {
         public override object Clone()

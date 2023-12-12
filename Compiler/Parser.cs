@@ -4,12 +4,13 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace Compiler
 {
-    
+
     public class Parser
     {
 
         private TokenList tokenList; //tipo que contiene los tokens parseados
         private State state;
+
 
         public Parser(TokenList tokenList, State state)
         {
@@ -17,7 +18,7 @@ namespace Compiler
             this.state = state;
         }
 
-        public Node Parse()
+        public Node Parse() //Parsea la tokenList
         {
             List<Node> nodes = new List<Node>();
 
@@ -31,11 +32,14 @@ namespace Compiler
 
             }
 
-            // This example assumes that the top level of your program is a sequence of statements.
-            // You may need to adjust this if your language has a different structure.
+
             return new BlockNode { statements = nodes };
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         private Node Statement()
         {
             Token token = tokenList.Peek();
@@ -79,11 +83,15 @@ namespace Compiler
                 case TokenType.OpenBrace:
                     return SequenceExpression();
 
-                // Handle other types of statements...
+
                 default:
                     throw new Exception("Unexpected token: " + token.Type);
             }
         }
+        /// <summary>
+        /// Parsea una expresionde tipo secuencia
+        /// </summary>
+        /// <returns></returns>
 
         private Node SequenceExpression()
         {
@@ -101,7 +109,10 @@ namespace Compiler
             return seq;
         }
 
-
+        /// <summary>
+        /// Parsea una expresion de tipo arco
+        /// </summary>
+        /// <returns></returns>
         private Node ArcExpression()
         {
             ExpectToken(TokenType.Arc);
@@ -115,7 +126,10 @@ namespace Compiler
             }
         }
 
-
+        /// <summary>
+        /// Parsea una expresion de tipo segmento
+        /// </summary>
+        /// <returns></returns>
         private Node SegmetnExpresion()
         {
             ExpectToken(TokenType.Segment);
@@ -129,7 +143,10 @@ namespace Compiler
             }
         }
 
-
+        /// <summary>
+        /// Parsea una expresion de tipo identificador de nivel superior
+        /// </summary>
+        /// <returns></returns>
         private Node IdentifierExpression()
         {
 
@@ -152,7 +169,10 @@ namespace Compiler
             }
             else return LogicExpression();
         }
-
+        /// <summary>
+        /// Parsea una expresion de tipo declaracion de secuencia
+        /// </summary>
+        /// <returns></returns>
         private Node SequencDeclarationExpression()
         {
 
@@ -174,7 +194,10 @@ namespace Compiler
             return seq;
         }
 
-
+        /// <summary>
+        /// Parsea una expresion de tipo linea
+        /// </summary>
+        /// <returns></returns>
         private Node LineExpression()
         {
             ExpectToken(TokenType.Line);
@@ -187,14 +210,20 @@ namespace Compiler
                 return new LineDeclarationNode(ExpectToken(TokenType.Identifier).Value);
             }
         }
-
+        /// <summary>
+        /// Parsea una expresion de tipo color
+        /// </summary>
+        /// <returns></returns>
 
         private Node ColorExpression()
         {
             throw new NotImplementedException();
         }
 
-
+        /// <summary>
+        /// Parsea una expresion de tipo circulo
+        /// </summary>
+        /// <returns></returns>
         private Node CircleExpression()
         {
 
@@ -210,7 +239,10 @@ namespace Compiler
             }
         }
 
-
+        /// <summary>
+        /// Parsea una expresion de tipo punto
+        /// </summary>
+        /// <returns></returns>
         private Node PointExpression()
         {
             ExpectToken(TokenType.Point);
@@ -219,10 +251,13 @@ namespace Compiler
 
             return new PointDeclarationNode(tokenName.Value);
         }
-
+        /// <summary>
+        /// Parsea una expresion de tipo draw
+        /// </summary>
+        /// <returns></returns>
         private Node DrawExpression()
         {
-            //throw new Exception("amaterasu");
+
             ExpectToken(TokenType.Draw);
             Token tokenName = ExpectToken(TokenType.Identifier);
             string figLabel = "";
@@ -232,35 +267,37 @@ namespace Compiler
 
 
             }
-            //ExpectToken(TokenType.Semicolon);
+
             return new DrawNode { figToDraw = tokenName.Value, label = figLabel };
         }
+        /// <summary>
+        /// Parsea una expresion de tipo declaracion de funcion
+        /// </summary>
+        /// <returns></returns>
         private Node FunctionDeclaration()
         {
-            // Expect an identifier token (the function name)
+
             string nameToken = ExpectToken(TokenType.Identifier).Value;
-            //throw new Exception("AMATERASI");
+
             if (state.Contains(nameToken))
             {
                 throw new Exception("Redefinicion de una constante o funcion declarada");
             }
 
-            // Expect an open parenthesis token
+
             ExpectToken(TokenType.OpenParenthesis);
 
             List<string> parameters = GetParameters();
 
-            // Expect a close parenthesis token
+
             ExpectToken(TokenType.CloseParenthesis);
 
             ExpectToken(TokenType.Equals);
-            // Expect an open brace token
-            // ExpectToken(TokenType.OpenBrace);
+
 
             Node body = Expression();
 
-            // Expect a close brace token
-            //ExpectToken(TokenType.CloseBrace);
+
 
             return new FunctionDeclarationNode
             {
@@ -269,10 +306,13 @@ namespace Compiler
                 Body = body
             };
         }
-
+        /// <summary>
+        /// Parsea una expresion de tipo declaracion de constante
+        /// </summary>
+        /// <returns></returns>
         private Node ConstantDeclaration()
         {
-            // Expect an identifier token (the constant name)
+
             string nameToken = ExpectToken(TokenType.Identifier).Value;
 
             if (state.Contains(nameToken))
@@ -280,10 +320,10 @@ namespace Compiler
                 throw new Exception("Redefinicion de una constante o una función");
             }
 
-            // Expect an equals token
+
             ExpectToken(TokenType.Equals);
 
-            // Parse the expression...
+
             Node value = Expression();
 
             return new ConstantDeclarationNode
@@ -294,27 +334,16 @@ namespace Compiler
 
         }
 
+        /// <summary>
+        /// Parsea una expresion de tipo llamada de funcion
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
 
-        private Node FunctionCall()
-        {
-            string funcName = ExpectToken(TokenType.Identifier).Value;
-            List<Node> parametersNodes = new();
-            ExpectToken(TokenType.OpenParenthesis);
-            while (Peek().Type != TokenType.CloseParenthesis && tokenList.HasMoreTokens())
-            {
-                parametersNodes.Add((Node)Expression().Clone());
-                if (Peek().Type != TokenType.CloseParenthesis)
-                {
-                    ExpectToken(TokenType.Comma);
-                }
-            }
-            ExpectToken(TokenType.CloseParenthesis);
-            return new FunctionCallNode { Name = funcName, Arguments = parametersNodes };
-        }
         private Node FunctionCall(string name)
         {
 
-            //tokenList.NextToken();
+
             string funcName = name;
             List<Node> parametersNodes = new();
             ExpectToken(TokenType.OpenParenthesis);
@@ -330,26 +359,36 @@ namespace Compiler
             return new FunctionCallNode { Name = funcName, Arguments = parametersNodes };
         }
 
-        private Node ConstantCall()
-        {
-            return new ConstantCallNode() { Name = ExpectToken(TokenType.Identifier).Value };
-        }
+        /// <summary>
+        /// Parsea una expresion de tipo llamada de constante
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
         private Node ConstantCall(string name, Token token)
         {
             return new ConstantCallNode() { Name = token.Value };
         }
 
-
+        /// <summary>
+        /// Devuelve una excepcion si se introduce un token inesperado
+        /// </summary>
+        /// <param name="expectedType"></param>
+        /// <returns></returns>
 
         private Token ExpectToken(TokenType expectedType)
         {
             Token token = tokenList.NextToken();
             if (token.Type != expectedType)
             {
-                throw new Exception("Expected token of type " + expectedType + ", but got " + token.Type);
+                throw new Exception("Expected token of type " + expectedType + " and got " + token.Type);
             }
             return token;
         }
+        /// <summary>
+        /// Parsea una expresion
+        /// </summary>
+        /// <returns></returns>
         private Node Expression()
         {
             Token token = tokenList.Peek();
@@ -392,7 +431,10 @@ namespace Compiler
                     throw new Exception("Unexpected token: " + token.Type);
             }
         }
-
+        /// <summary>
+        /// Parsea una expresion de tipo rayo
+        /// </summary>
+        /// <returns></returns>
         private Node RayExpression()
         {
             ExpectToken(TokenType.Ray);
@@ -407,18 +449,10 @@ namespace Compiler
         }
 
 
-        private Node IdentifierExpressionType2()
-        {
-
-
-            if (PeekNext().Type == TokenType.OpenParenthesis)
-            {
-
-                return FunctionCall();
-            }
-
-            else return ConstantCall();
-        }
+        /// <summary>
+        /// Parsea una expresion de tipo logica
+        /// </summary>
+        /// <returns></returns>
         private Node LogicExpression()
         {
             Node left = AdditiveExpression();
@@ -432,6 +466,10 @@ namespace Compiler
 
             return left;
         }
+        /// <summary>
+        /// Parsea una expresion de additiva
+        /// </summary>
+        /// <returns></returns>
 
         private Node AdditiveExpression()
         {
@@ -446,7 +484,10 @@ namespace Compiler
 
             return left;
         }
-
+        /// <summary>
+        /// Parsea una expresion de tipo multiplicativa
+        /// </summary>
+        /// <returns></returns>
         private Node MultiplicativeExpression()
         {
             Node left = PrimaryExpression();
@@ -460,7 +501,10 @@ namespace Compiler
 
             return left;
         }
-
+        /// <summary>
+        /// Parsea una expresion de tipo primaria
+        /// </summary>
+        /// <returns></returns>
         private Node PrimaryExpression()
         {
             if (Peek().Type == TokenType.OpenParenthesis)
@@ -476,6 +520,10 @@ namespace Compiler
             }
 
         }
+        /// <summary>
+        /// Parsea las ultimas expresiones posibles
+        /// </summary>
+        /// <returns></returns>
 
         private Node Last()
         {
@@ -509,22 +557,30 @@ namespace Compiler
                 throw new Exception("Expected number or identifier and got " + token.Type);
             }
         }
+        /// <summary>
+        /// Parsea una expresion de tipo import
+        /// </summary>
+        /// <returns></returns>
 
         private Node Import()
         {
-            
-            
+
+
             Token token = tokenList.NextToken();
             if (Peek().Type == TokenType.String)
             {
-                
+
                 return new ImportNode { Path = ExpectToken(TokenType.String).Value };
             }
             else throw new Exception("Expected string afther import and got: " + token.Type);
         }
+        /// <summary>
+        /// Parsea una expresion de tipo let-in 
+        /// </summary>
+        /// <returns></returns>
         private Node LetInExpression()
         {
-            //ExpectToken(TokenType.Let);
+
 
             List<ConstantDeclarationNode> declarations = new List<ConstantDeclarationNode>();
             while (Peek().Type != TokenType.In)
@@ -539,6 +595,10 @@ namespace Compiler
 
             return new LetInNode { Declarations = declarations, Body = body };
         }
+        /// <summary>
+        /// Parsea una expresion de tipo if-else
+        /// </summary>
+        /// <returns></returns>
 
         private Node IfElseExpression()
         {
@@ -555,7 +615,10 @@ namespace Compiler
 
             return new IfElseNode { Condition = condition, ThenBranch = thenBranch, ElseBranch = elseBranch };
         }
-
+        /// <summary>
+        /// Guarda los parametros de una funcion
+        /// </summary>
+        /// <returns></returns>
         private List<string> GetParameters()
         {
             List<string> parameters = new();
@@ -569,13 +632,19 @@ namespace Compiler
             }
             return parameters;
         }
-
+        /// <summary>
+        /// Devuelve el token actual sin consumirlo
+        /// </summary>
+        /// <returns></returns>
         private Token Peek()
         {
-            return tokenList.Peek();  // Assume this method returns the next token without consuming it
+            return tokenList.Peek();
         }
 
-
+        /// <summary>
+        /// Devuelve el token siguientesin consumirlo
+        /// </summary>
+        /// <returns></returns>
 
         private Token PeekNext()
         {
