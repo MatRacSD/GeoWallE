@@ -2,96 +2,84 @@ namespace Compiler
 {
     public class State
     {
-        public List<PointNode> RunTest1(string input)
+        private Dictionary<string, FunctionDeclarationNode> functions = new Dictionary<string, FunctionDeclarationNode>();
+        public Dictionary<string, ConstantDeclarationNode> constants = new Dictionary<string, ConstantDeclarationNode>();
+        public List<string> toPrint = new();
+        public List<Node> toDraw = new();
+        public List<ErrorNode> errors = new();
+
+        public void Run(string input)
         {
-            Parser.LevelsInit();
-            List<string> stringTokens = new List<string>();
-
-            List<Token> tokens = Lexer.TokensInit(input);
-
-            List<Node> nodes = Parser.Parse(this, tokens);
-            
-            
-            foreach (Node item in nodes)
+            try
             {
-                if (item.GetType() == "ErrorNode") errorNodes.Add((ErrorNode)item);
+                Lexer.Tokenizer tokenizer = new Lexer.Tokenizer(input);
+                TokenList tokens = new(tokenizer.Tokenize().ToList());
+                Parser parser = new(tokens, this);
+                Node node = parser.Parse();
+                node.Evaluate(this);
             }
-
-            
-            //return new List<PointNode>(){new PointNode(((MainNode)nodes[0]).nodes[0].tokenList[0].ToString())};
-
-            foreach (Node node in nodes)
+            catch (Exception e)
             {
-                Node nod;
-                if (node.GetType() == "MainNode") { 
-                    nod = Parser.ParseLevel(((MainNode)node).nodes, 1, this);
-                    
-                    if (nod.GetType() == "PointNode") PointsToDraw.Add((PointNode)nod);
-                     else if (nod.GetType() == "ErrorNode") errorNodes.Add((ErrorNode)nod);
-                 }
-                 else if(node.GetType() == "ErrorNode") errorNodes.Add((ErrorNode)node);
-                
-                
+                errors.Add(new() { Error = e.ToString() });
             }
-           
-            return PointsToDraw;
-
         }
-        public List<ErrorNode> errorNodes = new();
-        private readonly string[] reservedWords = { "if", "else", "then", "let", "in", "point", "segment", "line", "circle", "draw" };
-        public List<ConstantNode> constantNodes = new List<ConstantNode>();
-        
-        public string toPrint = "";
-        public List<string> pointsDeclared = new();
-        public List<PointNode> PointsToDraw = new();
-
-        public List<FunctionNode> activeFunctions = new List<FunctionNode>();
-
-        public bool ConstantExist(string constantName)
+        public void AddToDraw(Node node)
         {
-            foreach (ConstantNode node in constantNodes)
-            {
-                if (node != null)
-                {
-                    if (node.GetName() == constantName) return true;
-                }
-            }
-
-            return false;
+            toDraw.Add(node);
         }
-        public ConstantNode GetConstantNode(string name)
+        public bool ContainsFunction(string functionName)
         {
-            foreach (ConstantNode c in constantNodes)
-            {
-                if(c.GetName() == name) return (ConstantNode)c.Clone();
-            }
-            throw new Exception("no se encontró la constante -->") ;
+            return functions.ContainsKey(functionName);
         }
-        public FunctionNode GetFunction(string name)
+        public bool ContainsConstant(string constantName)
         {
-            foreach (FunctionNode f in activeFunctions)
-            {
-                if(f.GetName() == name) return (FunctionNode)f.Clone();
-            }
-            throw new Exception("no se encontró la función");
-        }
-        public bool FunctionExist(string functionName)
-        {
-            foreach (FunctionNode node in activeFunctions)
-            {
-                if (node != null)
-                {
-                    if (node.GetName() == functionName) return true;
-                }
-            }
-
-            return false;
+            return constants.ContainsKey(constantName);
         }
 
-        public bool IsReserved(string word)
+        public void RemoveConstant(string name)
         {
-            return reservedWords.Contains(word);
+            constants.Remove(name);
+        }
 
+        //
+        public bool Contains(string word) //verdadero si contiene una funcion o constante con ese nombre
+        {
+            return ContainsFunction(word) || ContainsConstant(word);
+        }
+
+        public void AddFunction(FunctionDeclarationNode function)
+        {
+            if (functions.ContainsKey(function.Name) || constants.ContainsKey(function.Name))
+            {
+                throw new Exception("A function or constant with the name '" + function.Name + "' already exists.");
+            }
+            functions[function.Name] = function;
+        }
+
+        public void AddConstant(ConstantDeclarationNode constant)
+        {
+            if (functions.ContainsKey(constant.Name) || constants.ContainsKey(constant.Name))
+            {
+                throw new Exception("A function or constant with the name '" + constant.Name + "' already exists.");
+            }
+            constants[constant.Name] = constant;
+        }
+        public FunctionDeclarationNode CallFunction(string name)
+        {
+            if (!functions.ContainsKey(name))
+            {
+                throw new Exception("No function with the name '" + name + "' exists.");
+            }
+            return functions[name];
+        }
+
+        public ConstantDeclarationNode GetConstant(string name)
+        {
+            if (!constants.ContainsKey(name))
+            {
+                throw new Exception("No constant with the name '" + name + "' exists.");
+            }
+            return constants[name];
         }
     }
 }

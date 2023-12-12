@@ -47,6 +47,11 @@ position = Vector2(10, 10)
 scale = Vector2(0.01, 0.01)
 texture = ExtResource("1_ym2ao")
 
+[node name="Line2D" type="Line2D" parent="Plane/PlaneCenter"]
+visible = false
+points = PackedVector2Array(13, 0, 100, -50)
+default_color = Color(1, 0.301961, 0.301961, 1)
+
 [node name="PlaneSpriteContainer" type="Sprite2D" parent="Plane"]
 position = Vector2(325, 325)
 
