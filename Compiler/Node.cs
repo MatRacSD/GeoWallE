@@ -1,14 +1,19 @@
 using System.Drawing;
 using System.Formats.Asn1;
 using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+using System.IO;
+
 
 namespace Compiler
 {
 
-    public abstract class Node
+    public abstract class Node : ICloneable
     {
+        public abstract object Clone();
+
         public abstract Node Evaluate(State state);
-        //public abstract Type GetType();
+        
     }
      
     
@@ -16,16 +21,45 @@ namespace Compiler
     {
         public string Path { get; set; }
 
+        public override object Clone()
+        {
+            return new ImportNode(){Path = Path};
+        }
+
         public override Node Evaluate(State state)
         {
-            throw new NotImplementedException();
+            if(!state.imported.Contains(Path))
+            {
+                state.imported.Add(Path);
+                state.Run(ReadFile(Path));
+            }
+
+            
+            return new NullNode();
         }
+        public string ReadFile(string filename)
+    {
+        if(File.Exists(filename))
+        {
+            return File.ReadAllText(filename);
+        }
+        else
+        {
+            throw new FileNotFoundException("File not found: " + filename);
+        }  
+    }
     }
 
     public class SequencDeclarationNode : Node
     {
         public List<Token> constants = new();
         public Node body {get; set;}
+
+        public override object Clone()
+        {
+            return new SequencDeclarationNode(){constants = constants,body = (Node)body.Clone()};
+        }
+
         public override Node Evaluate(State state)
         {
             if(body.Evaluate(state).GetType().ToString() != "Compiler.SequenceNode")
@@ -52,6 +86,10 @@ namespace Compiler
     }
     public class PointDeclarationNode : Node
     {
+        private PointDeclarationNode()
+        {
+
+        }
         public PointNode point { get; set; }
 
         public PointDeclarationNode(string pName)
@@ -63,10 +101,18 @@ namespace Compiler
             state.AddConstant(new ConstantDeclarationNode() { Name = point.pointName, Value = point });
             return new NullNode();
         }
+
+        public override object Clone()
+        {
+            return new PointDeclarationNode(){point = (PointNode)point.Clone()};
+        }
     }
     public class PointNode : Node
     {
+      private PointNode()
+      {
 
+      }
         public string pointName;
         public double xValue;
         public double yValue;
@@ -94,12 +140,22 @@ namespace Compiler
         {
             return this;
         }
+
+        public override object Clone()
+        {
+            return new PointNode(){pointName = pointName, xValue = xValue, yValue = yValue};
+        }
     }
 
 
     public class ColorNode : Node
     {
         public string Id { get; set; }
+
+        public override object Clone()
+        {
+            return new ColorNode(){Id = Id};
+        }
 
         public override Node Evaluate(State state)
         {
@@ -110,6 +166,11 @@ namespace Compiler
     public class MeasureNode : Node
     {
         public double mValue;
+
+        public override object Clone()
+        {
+            return new MeasureNode(){mValue = mValue};
+        }
 
         public override Node Evaluate(State state)
         {
@@ -125,6 +186,11 @@ namespace Compiler
         }
         public string figToDraw { get; set; }
         public string label { get; set; }
+
+        public override object Clone()
+        {
+            return new DrawNode(){figToDraw = figToDraw, label = label};
+        }
 
         public override Node Evaluate(State state)
         {
@@ -151,6 +217,11 @@ namespace Compiler
         public List<string> Parameters { get; set; }
         public Node Body { get; set; }
 
+        public override object Clone()
+        {
+            return new FunctionDeclarationNode(){Name = Name,Parameters = Parameters,Body = (Node)Body.Clone()};
+        }
+
         public override Node Evaluate(State state)
         {
             state.AddFunction(this);
@@ -162,15 +233,16 @@ namespace Compiler
             {
                 throw new Exception("Expected " + Parameters.Count + "arguments and got " + args.Count);
             }
+            State funcScope = (State)state.Clone();
             for (int i = 0; i < args.Count; i++)
             {
-                state.AddConstant(new ConstantDeclarationNode() { Name = Parameters[i], Value = args[i] });
+                funcScope.ForceAddConstant(new ConstantDeclarationNode() { Name = Parameters[i], Value = ((Node)args[i].Clone()).Evaluate(funcScope) });
             }
-            Node result = Body.Evaluate(state);
-            for (int i = 0; i < Parameters.Count; i++)
+            Node result = ((Node)Body.Clone()).Evaluate(funcScope);
+            /*for (int i = 0; i < Parameters.Count; i++)
             {
                 state.RemoveConstant(Parameters[i]);
-            }
+            }*/
             return result;
         }
 
@@ -180,6 +252,16 @@ namespace Compiler
     {
         public string Name { get; set; }
         public List<Node> Arguments { get; set; }
+
+        public override object Clone()
+        {
+            List<Node> nodesTemp = new();
+            foreach (var item in Arguments)
+            {
+                nodesTemp.Add((Node)item.Clone());
+            }
+            return new FunctionCallNode(){Name = Name, Arguments = nodesTemp};
+        }
 
         public override Node Evaluate(State state)
         {
@@ -229,6 +311,7 @@ namespace Compiler
     {
         public List<Node> nodes = new();
         public string Type = "undefined";
+        public NumberNode count{get => new NumberNode(){Value = nodes.Count};}
 
         public void Add(Node node,State state)
         {
@@ -239,7 +322,15 @@ namespace Compiler
             
         }
 
-        public NumberNode count{get => new NumberNode(){Value = nodes.Count};}
+        public override object Clone()
+        {
+            List<Node> nodesTemp = new();
+            foreach (var item in nodes)
+            {
+                nodesTemp.Add((Node)item.Clone());
+            }
+            return new SequenceNode(){nodes = nodesTemp};
+        }
 
         public override Node Evaluate(State state)
         {
@@ -263,6 +354,11 @@ namespace Compiler
         public string Name { get; set; }
         public Node Value { get; set; }
 
+        public override object Clone()
+        {
+            return new ConstantDeclarationNode(){Name = Name, Value = (Node)Value.Clone()};
+        }
+
         public override Node Evaluate(State state)
         {
             Value = Value.Evaluate(state);
@@ -275,9 +371,16 @@ namespace Compiler
     {
         public string Name { get; set; }
 
+        public override object Clone()
+        {
+            return new ConstantCallNode(){Name = Name};
+        }
+
         public override Node Evaluate(State state)
         {
-            return state.GetConstant(Name).Value.Evaluate(state);
+            ConstantDeclarationNode constD = state.GetConstant(Name);
+            Node result = (Node)constD.Value.Clone();
+            return (Node)result.Evaluate(state).Clone();
         }
         //public Node Value { get; set; }
     }
@@ -286,6 +389,11 @@ namespace Compiler
     public class NumberNode : Node
     {
         public double Value { get; set; }
+
+        public override object Clone()
+        {
+            return new NumberNode(){Value = Value};
+        }
 
         public override Node Evaluate(State state)
         {
@@ -315,6 +423,11 @@ namespace Compiler
         {
             return this;
         }
+
+        public override object Clone()
+        {
+            return new SegmentNode(lineName,(PointNode)pointA.Clone(),(PointNode)pointB.Clone());
+        }
     }
     public class SegmentDeclarationNode : Node
     {
@@ -323,9 +436,15 @@ namespace Compiler
         {
             line = new SegmentNode(Name);
         }
+        private SegmentDeclarationNode(SegmentNode segmentNode)
+        {
+            line = segmentNode;
+        }
 
-
-
+        public override object Clone()
+        {
+            return new SegmentDeclarationNode((SegmentNode)line.Clone());
+        }
 
         public override Node Evaluate(State state)
         {
@@ -356,6 +475,11 @@ namespace Compiler
         {
             return this;
         }
+
+        public override object Clone()
+        {
+            return new RayNode(lineName,(PointNode)pointA.Clone(),(PointNode)pointB.Clone());
+        }
     }
     public class RayDeclarationNode : Node
     {
@@ -364,9 +488,15 @@ namespace Compiler
         {
             ray = new RayNode(Name);
         }
+        private RayDeclarationNode(RayNode Ray)
+        {
+            ray = Ray;
+        }
 
-
-
+        public override object Clone()
+        {
+            return new RayDeclarationNode((RayNode)ray.Clone());
+        }
 
         public override Node Evaluate(State state)
         {
@@ -397,6 +527,11 @@ namespace Compiler
         {
             return this;
         }
+
+        public override object Clone()
+        {
+            return new LineNode(lineName,(PointNode)pointA.Clone(),(PointNode)pointB.Clone());
+        }
     }
     public class LineDeclarationNode : Node
     {
@@ -406,8 +541,15 @@ namespace Compiler
             line = new LineNode(Name);
         }
 
+        private LineDeclarationNode(LineNode Line)
+        {
+            line = Line;
+        }
 
-
+        public override object Clone()
+        {
+            return new LineDeclarationNode((LineNode)line.Clone());
+        }
 
         public override Node Evaluate(State state)
         {
@@ -433,6 +575,12 @@ namespace Compiler
 
         public PointNode center { get; set; }
         public NumberNode radio { get; set; }
+
+        public override object Clone()
+        {
+            return new CircleNode(Name,(PointNode)center.Clone(),(NumberNode)radio.Clone());
+        }
+
         public override Node Evaluate(State state)
         {
             return this;
@@ -440,6 +588,10 @@ namespace Compiler
     }
     public class CircleDeclarationNode : Node
     {
+        private CircleDeclarationNode(CircleNode Circle)
+        {
+circle = Circle;
+        }
         public CircleDeclarationNode(string Name)
         {
             circle = new(Name);
@@ -449,6 +601,11 @@ namespace Compiler
         {
             state.AddConstant(new ConstantDeclarationNode() { Name = circle.Name, Value = circle });
             return new NullNode();
+        }
+
+        public override object Clone()
+        {
+            return new CircleDeclarationNode((CircleNode)circle.Clone());
         }
     }
     public class ArcNode : Node
@@ -477,6 +634,11 @@ namespace Compiler
             this.radio = radio;
         }
 
+        public override object Clone()
+        {
+            return new ArcNode(Name,(PointNode)center.Clone(),(PointNode)p1.Clone(),(PointNode)p2.Clone(),(NumberNode)radio.Clone());
+        }
+
         public override Node Evaluate(State state)
         {
             return this;
@@ -484,11 +646,22 @@ namespace Compiler
     }
     public class ArcDeclarationNode : Node
     {
-        public ArcNode arc;
+         public ArcNode arc;
+        private ArcDeclarationNode(ArcNode arcNode)
+        {
+            arc = arcNode;
+        }
+       
         public ArcDeclarationNode(string arcName)
         {
             arc = new(arcName);
         }
+
+        public override object Clone()
+        {
+            return new ArcDeclarationNode((ArcNode)arc.Clone());
+        }
+
         public override Node Evaluate(State state)
         {
             state.AddConstant(new ConstantDeclarationNode() { Name = arc.Name, Value = arc });
@@ -501,8 +674,15 @@ namespace Compiler
         public TokenType Operator { get; set; }
         public Node Right { get; set; }
 
+        public override object Clone()
+        {
+            return new BinaryOperationNode(){Left = (Node)Left.Clone(),Operator = Operator, Right = (Node)Right.Clone()};
+        }
+
         public override Node Evaluate(State state)
         {
+            
+
             return Operations.BinaryOperation(Left.Evaluate(state), Right.Evaluate(state), Operator);
         }
     }
@@ -512,6 +692,11 @@ namespace Compiler
         public TokenType Operator { get; set; }
         public Node Operand { get; set; }
 
+        public override object Clone()
+        {
+            return new UnaryOperationNode(){Operator = Operator, Operand = (Node)Operand.Clone()};
+        }
+
         public override Node Evaluate(State state)
         {
             return Operations.UnaryOperation(Operand.Evaluate(state), Operator);
@@ -520,7 +705,17 @@ namespace Compiler
 
     public class BlockNode : Node
     {
-        public List<Node> statements;
+        public List<Node> statements{get;set;}
+
+        public override object Clone()
+        {
+            List<Node> statementsNodes = new();
+            foreach (var item in statements)
+            {
+              statementsNodes.Add((Node)item.Clone());   
+            }
+            return new BlockNode(){statements = statementsNodes};
+        }
 
         public override Node Evaluate(State state)
         {
@@ -535,6 +730,16 @@ namespace Compiler
     {
         public List<ConstantDeclarationNode> Declarations { get; set; }
         public Node Body { get; set; }
+
+        public override object Clone()
+        {
+            List<ConstantDeclarationNode> declarationNodes = new();
+            foreach (var item in Declarations)
+            {
+                declarationNodes.Add((ConstantDeclarationNode)item.Clone());
+            }
+            return new LetInNode(){Declarations = declarationNodes, Body = (Node)Body.Clone()};
+        }
 
         public override Node Evaluate(State state)
         {
@@ -555,6 +760,11 @@ namespace Compiler
     {
         public string Error;
 
+        public override object Clone()
+        {
+            return new ErrorNode(){Error = Error};
+        }
+
         public override Node Evaluate(State state)
         {
             return this;
@@ -566,6 +776,11 @@ namespace Compiler
         public Node Condition { get; set; }
         public Node ThenBranch { get; set; }
         public Node ElseBranch { get; set; }
+
+        public override object Clone()
+        {
+            return new IfElseNode(){Condition = (Node)Condition.Clone(),ThenBranch = (Node)ThenBranch.Clone(),ElseBranch = (Node)ElseBranch.Clone()};
+        }
 
         public override Node Evaluate(State state)
         {
@@ -579,6 +794,11 @@ namespace Compiler
     public class NullNode : Node
 
     {
+        public override object Clone()
+        {
+            return new NullNode();
+        }
+
         public override Node Evaluate(State state)
         {
             return this;
@@ -587,6 +807,11 @@ namespace Compiler
 
     public class UndefinedNode : Node
     {
+        public override object Clone()
+        {
+            return new UndefinedNode();
+        }
+
         public override Node Evaluate(State state)
         {
             return this;

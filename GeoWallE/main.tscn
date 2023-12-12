@@ -90,3 +90,10 @@ focus_mode = 2
 text = "df"
 selection_enabled = true
 script = ExtResource("3_uxrnx")
+
+[node name="TextEdit" type="TextEdit" parent="CodeEditor"]
+layout_mode = 0
+offset_left = 0.25
+offset_top = 607.0
+offset_right = 150.25
+offset_bottom = 647.0
