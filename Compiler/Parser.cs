@@ -4,6 +4,7 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace Compiler
 {
+    
     public class Parser
     {
 
@@ -22,11 +23,11 @@ namespace Compiler
 
             while (tokenList.HasMoreTokens())
             {
-                
-                    nodes.Add(Statement());
-                    ExpectToken(TokenType.Semicolon);
-                
-                
+
+                nodes.Add(Statement());
+                ExpectToken(TokenType.Semicolon);
+
+
 
             }
 
@@ -43,7 +44,7 @@ namespace Compiler
                 case TokenType.Import:
                     return Import();
                 case TokenType.Let:
-                    return LetInExpression();
+                    return LogicExpression();
                 case TokenType.Draw:
                     return DrawExpression();
                 case TokenType.Point:
@@ -56,26 +57,26 @@ namespace Compiler
                     return LineExpression();
                 case TokenType.Ray:
                     return RayExpression();
-                    case TokenType.Arc:
+                case TokenType.Arc:
                     return ArcExpression();
-                    case TokenType.Segment:
+                case TokenType.Segment:
                     return SegmetnExpresion();
-                    case TokenType.OpenParenthesis:
-                    return PrimaryExpression();
+                case TokenType.OpenParenthesis:
+                    return LogicExpression();
                 case TokenType.Minus:
-                    return AdditiveExpression();
+                    return LogicExpression();
                 case TokenType.If:
-                    return IfElseExpression();
+                    return LogicExpression();
                 case TokenType.Identifier:
                     return IdentifierExpression();
                 case TokenType.Number:
-                    return AdditiveExpression();
-                    case TokenType.GuionBajo:
+                    return LogicExpression();
+                case TokenType.GuionBajo:
                     return SequencDeclarationExpression();
-                    case TokenType.End:
+                case TokenType.End:
                     ExpectToken(TokenType.End);
                     return new NullNode();
-                    case TokenType.OpenBrace:
+                case TokenType.OpenBrace:
                     return SequenceExpression();
 
                 // Handle other types of statements...
@@ -90,7 +91,7 @@ namespace Compiler
             SequenceNode seq = new();
             while (Peek().Type != TokenType.CloseBrace && tokenList.HasMoreTokens())
             {
-                seq.Add(Expression(),state);
+                seq.Add(Expression(), state);
                 if (Peek().Type != TokenType.CloseBrace)
                 {
                     ExpectToken(TokenType.Comma);
@@ -104,7 +105,7 @@ namespace Compiler
         private Node ArcExpression()
         {
             ExpectToken(TokenType.Arc);
-            if(Peek().Type == TokenType.OpenParenthesis)
+            if (Peek().Type == TokenType.OpenParenthesis)
             {
                 return FunctionCall("arc");
             }
@@ -118,7 +119,7 @@ namespace Compiler
         private Node SegmetnExpresion()
         {
             ExpectToken(TokenType.Segment);
-            if(Peek().Type == TokenType.OpenParenthesis)
+            if (Peek().Type == TokenType.OpenParenthesis)
             {
                 return FunctionCall("segment");
             }
@@ -131,39 +132,39 @@ namespace Compiler
 
         private Node IdentifierExpression()
         {
-            
+
             //xpectToken(TokenType.Identifier).Value;
-            if(PeekNext().Type == TokenType.OpenParenthesis)
+            if (PeekNext().Type == TokenType.OpenParenthesis)
             {
-                if(tokenList.IsThereAnEqual())
+                if (tokenList.IsThereAnEqual())
                 {
                     return FunctionDeclaration();
                 }
-                else return FunctionCall();
+                else return LogicExpression();
             }
-            else if(PeekNext().Type == TokenType.Comma)
+            else if (PeekNext().Type == TokenType.Comma)
             {
                 return SequencDeclarationExpression();
             }
-            else if(PeekNext().Type == TokenType.Equals)
+            else if (PeekNext().Type == TokenType.Equals)
             {
                 return ConstantDeclaration();
             }
-            else return ConstantCall();
+            else return LogicExpression();
         }
 
         private Node SequencDeclarationExpression()
         {
-            
+
             SequencDeclarationNode seq = new();
             while (Peek().Type != TokenType.Equals && tokenList.HasMoreTokens())
             {
-                if(Peek().Type == TokenType.GuionBajo)
+                if (Peek().Type == TokenType.GuionBajo)
                 {
                     seq.constants.Add(ExpectToken(TokenType.GuionBajo));
                 }
                 else seq.constants.Add(ExpectToken(TokenType.Identifier));
-                if(Peek().Type != TokenType.Equals)
+                if (Peek().Type != TokenType.Equals)
                 {
                     ExpectToken(TokenType.Comma);
                 }
@@ -177,7 +178,7 @@ namespace Compiler
         private Node LineExpression()
         {
             ExpectToken(TokenType.Line);
-            if(Peek().Type == TokenType.OpenParenthesis)
+            if (Peek().Type == TokenType.OpenParenthesis)
             {
                 return FunctionCall("line");
             }
@@ -196,15 +197,15 @@ namespace Compiler
 
         private Node CircleExpression()
         {
-            
+
             ExpectToken(TokenType.Circle);
-            if(Peek().Type == TokenType.OpenParenthesis)
+            if (Peek().Type == TokenType.OpenParenthesis)
             {
                 return FunctionCall("circle");
             }
             else
             {
-                
+
                 return new CircleDeclarationNode(ExpectToken(TokenType.Identifier).Value);
             }
         }
@@ -214,8 +215,8 @@ namespace Compiler
         {
             ExpectToken(TokenType.Point);
             Token tokenName = ExpectToken(TokenType.Identifier);
-           
-            
+
+
             return new PointDeclarationNode(tokenName.Value);
         }
 
@@ -254,7 +255,7 @@ namespace Compiler
 
             ExpectToken(TokenType.Equals);
             // Expect an open brace token
-           // ExpectToken(TokenType.OpenBrace);
+            // ExpectToken(TokenType.OpenBrace);
 
             Node body = Expression();
 
@@ -292,7 +293,7 @@ namespace Compiler
             };
 
         }
-        
+
 
         private Node FunctionCall()
         {
@@ -301,7 +302,7 @@ namespace Compiler
             ExpectToken(TokenType.OpenParenthesis);
             while (Peek().Type != TokenType.CloseParenthesis && tokenList.HasMoreTokens())
             {
-                parametersNodes.Add(Expression());
+                parametersNodes.Add((Node)Expression().Clone());
                 if (Peek().Type != TokenType.CloseParenthesis)
                 {
                     ExpectToken(TokenType.Comma);
@@ -312,7 +313,7 @@ namespace Compiler
         }
         private Node FunctionCall(string name)
         {
-            
+
             //tokenList.NextToken();
             string funcName = name;
             List<Node> parametersNodes = new();
@@ -333,6 +334,10 @@ namespace Compiler
         {
             return new ConstantCallNode() { Name = ExpectToken(TokenType.Identifier).Value };
         }
+        private Node ConstantCall(string name, Token token)
+        {
+            return new ConstantCallNode() { Name = token.Value };
+        }
 
 
 
@@ -352,36 +357,36 @@ namespace Compiler
             {
 
                 case TokenType.Let:
-                    return LetInExpression();
-case TokenType.Line:
-return LineExpression();
+                    return LogicExpression();
+                case TokenType.Line:
+                    return LineExpression();
                 case TokenType.Draw:
-                return DrawExpression();
+                    return DrawExpression();
                 case TokenType.Minus:
-                    return AdditiveExpression();
+                    return LogicExpression();
                 case TokenType.If:
-                    return IfElseExpression();
+                    return LogicExpression();
                 case TokenType.Identifier:
-                    return IdentifierExpressionType2();
+                    return LogicExpression();
                 case TokenType.Number:
-                    return AdditiveExpression();
+                    return LogicExpression();
                 case TokenType.OpenParenthesis:
-                    return PrimaryExpression();
-                    
+                    return LogicExpression();
+
                 case TokenType.String:
                 case TokenType.Point:
-                return PointExpression();
+                    return PointExpression();
                 case TokenType.Circle:
-                return CircleExpression();
+                    return CircleExpression();
                 case TokenType.Segment:
-                return SegmetnExpresion();
+                    return SegmetnExpresion();
                 case TokenType.Ray:
-                return RayExpression();
+                    return RayExpression();
                 case TokenType.Arc:
                     return ArcExpression();
-                    case TokenType.OpenBrace:
+                case TokenType.OpenBrace:
                     return SequenceExpression();
-                
+
 
                 default:
                     throw new Exception("Unexpected token: " + token.Type);
@@ -391,7 +396,7 @@ return LineExpression();
         private Node RayExpression()
         {
             ExpectToken(TokenType.Ray);
-            if(Peek().Type == TokenType.OpenParenthesis)
+            if (Peek().Type == TokenType.OpenParenthesis)
             {
                 return FunctionCall("ray");
             }
@@ -404,17 +409,29 @@ return LineExpression();
 
         private Node IdentifierExpressionType2()
         {
-            
-            
-            if(PeekNext().Type == TokenType.OpenParenthesis)
+
+
+            if (PeekNext().Type == TokenType.OpenParenthesis)
             {
-                
-                 return FunctionCall();
+
+                return FunctionCall();
             }
-            
+
             else return ConstantCall();
         }
+        private Node LogicExpression()
+        {
+            Node left = AdditiveExpression();
 
+            while (tokenList.HasMoreTokens() && (Peek().Type == TokenType.EqualEqual || Peek().Type == TokenType.GreaterThanEqual || Peek().Type == TokenType.LessThanEqual || Peek().Type == TokenType.LessThan || Peek().Type == TokenType.GreaterThan))
+            {
+                Token op = tokenList.NextToken();
+                Node right = AdditiveExpression();
+                left = new BinaryOperationNode { Left = left, Operator = op.Type, Right = right };
+            }
+
+            return left;
+        }
 
         private Node AdditiveExpression()
         {
@@ -434,7 +451,7 @@ return LineExpression();
         {
             Node left = PrimaryExpression();
 
-            while (tokenList.HasMoreTokens() && (Peek().Type == TokenType.Multiply || Peek().Type == TokenType.Divide))
+            while (tokenList.HasMoreTokens() && (Peek().Type == TokenType.Multiply || Peek().Type == TokenType.Divide || Peek().Type == TokenType.DivideRest))
             {
                 Token op = tokenList.NextToken();
                 Node right = PrimaryExpression();
@@ -472,26 +489,43 @@ return LineExpression();
             {
                 return new NumberNode { Value = double.Parse(token.Value) };
             }
+            else if (token.Type == TokenType.Let)
+                return LetInExpression();
+            else if (token.Type == TokenType.If)
+                return IfElseExpression();
+            else if (token.Type == TokenType.Identifier)
+            {
+                if (Peek().Type == TokenType.OpenParenthesis)
+                {
+
+                    return FunctionCall(token.Value);
+                }
+
+                else return ConstantCall(token.Value, token);
+            }
+
             else
             {
-                throw new Exception("Expected number, got " + token.Type);
+                throw new Exception("Expected number or identifier and got " + token.Type);
             }
         }
 
         private Node Import()
         {
-            ExpectToken(TokenType.Import);
+            
+            
             Token token = tokenList.NextToken();
-            if (token.Type == TokenType.String)
+            if (Peek().Type == TokenType.String)
             {
-                return new ImportNode { Path = token.Value };
+                
+                return new ImportNode { Path = ExpectToken(TokenType.String).Value };
             }
-            else throw new Exception("Expected string afther import");
+            else throw new Exception("Expected string afther import and got: " + token.Type);
         }
         private Node LetInExpression()
         {
-            ExpectToken(TokenType.Let);
-           
+            //ExpectToken(TokenType.Let);
+
             List<ConstantDeclarationNode> declarations = new List<ConstantDeclarationNode>();
             while (Peek().Type != TokenType.In)
             {
@@ -508,7 +542,7 @@ return LineExpression();
 
         private Node IfElseExpression()
         {
-            ExpectToken(TokenType.If);
+            //ExpectToken(TokenType.If);
             Node condition = Expression();
 
             ExpectToken(TokenType.Then);
@@ -541,7 +575,7 @@ return LineExpression();
             return tokenList.Peek();  // Assume this method returns the next token without consuming it
         }
 
-        
+
 
         private Token PeekNext()
         {

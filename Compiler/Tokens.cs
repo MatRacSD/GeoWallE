@@ -25,6 +25,7 @@ namespace Compiler
         Divide,
         Identifier,
         Import,
+        DivideRest,
         Color,
         Draw,
         Equals,
@@ -38,6 +39,8 @@ namespace Compiler
         PointSequence,
         OpenParenthesis,
         CloseParenthesis,
+        GreaterThan,
+        LessThan,
         Comma,
         Semicolon,
         LessThanEqual,
@@ -95,6 +98,10 @@ namespace Compiler
                                 yield return new Token { Type = TokenType.Plus, Value = "+" };
                                 position++;
                                 break;
+                            case '%':
+                                yield return new Token { Type = TokenType.DivideRest, Value = "%" };
+                                position++;
+                                break;
                             case '-':
                                 yield return new Token { Type = TokenType.Minus, Value = "-" };
                                 position++;
@@ -145,6 +152,12 @@ namespace Compiler
                                     yield return new Token { Type = TokenType.LessThanEqual, Value = "<=" };
                                     position += 2;
                                 }
+                                else
+                                {
+                                    yield return new Token { Type = TokenType.LessThan, Value = "<" };
+                                    position++;
+                                }
+
                                 break;
                             case '>':
                                 if (input[position + 1] == '=')
@@ -152,6 +165,13 @@ namespace Compiler
                                     yield return new Token { Type = TokenType.GreaterThanEqual, Value = ">=" };
                                     position += 2;
                                 }
+                                else
+                                {
+                                    yield return new Token { Type = TokenType.GreaterThan, Value = ">" };
+                                    position++;
+                                }
+
+
                                 break;
                             case '=':
                                 if (input[position + 1] == '=')
@@ -187,6 +207,9 @@ namespace Compiler
                 {
                     case "let":
                         type = TokenType.Let;
+                        break;
+                    case "import":
+                        type = TokenType.Import;
                         break;
                     case "in":
                         type = TokenType.In;

@@ -1,6 +1,7 @@
 using Godot;
 using Compiler;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Formats.Asn1;
 using Godot.NativeInterop;
@@ -10,6 +11,8 @@ public partial class CodeEditorScript : CodeEdit
 {
 	private OutputConsole outputConsole;
 	private Sprite2D plane;
+
+	private TextEdit saveBox;
 	private bool canPressF5 = true;
 	private Timer delayTimer;
 	string valuex = "null";
@@ -18,6 +21,8 @@ public partial class CodeEditorScript : CodeEdit
 	{
 		outputConsole = GetNode<OutputConsole>("/root/Main/CodeEditor/OutputConsole");
 		plane = GetNode<Sprite2D>("/root/Main/Plane/PlaneSpriteContainer");
+		saveBox = GetNode<TextEdit>("/root/Main/CodeEditor/TextEdit");
+
 		// Create a timer node
 		delayTimer = new Timer();
 		AddChild(delayTimer);
@@ -162,7 +167,24 @@ public partial class CodeEditorScript : CodeEdit
 
 
 		}
-
+		if(canPressF5 && Input.IsKeyPressed(Key.F9))
+		{
+			canPressF5 = false;
+			try{
+			CreateFile(saveBox.Text,Text);
+			}
+			catch(Exception e)
+			{
+				outputConsole.Text = e.ToString();
+			}
+			delayTimer.Stop();
+			delayTimer.Start();
+		}
+	}
+	public void CreateFile(string title, string text)
+	{
+		string filename = title + ".geo";
+		File.WriteAllText(filename, text);
 	}
 	public float[] CalculateLinePoints(float x1, float y1, float x2, float y2) ///Para representar la linea
 	{

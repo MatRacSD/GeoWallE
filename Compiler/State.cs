@@ -1,13 +1,27 @@
+using System.Runtime.InteropServices;
+
 namespace Compiler
 {
-    public class State
+    public class State : ICloneable
     {
-        private Dictionary<string, FunctionDeclarationNode> functions = new Dictionary<string, FunctionDeclarationNode>();
-        public Dictionary<string, ConstantDeclarationNode> constants = new Dictionary<string, ConstantDeclarationNode>();
+        private Dictionary<string, FunctionDeclarationNode> functions = new();
+        public Dictionary<string, ConstantDeclarationNode> constants = new();
+        
+        public List<string> imported = new();
+        public Dictionary<string, ConstantDeclarationNode> tempConstants = new();
         public List<string> toPrint = new();
         public List<Node> toDraw = new();
         public List<ErrorNode> errors = new();
-
+        
+        public object Clone()
+        {
+           Dictionary<string,ConstantDeclarationNode> constantNodes = new();
+           foreach (var item in constants)
+           {
+              constantNodes.Add(item.Key,(ConstantDeclarationNode)item.Value.Clone());
+           }
+            return new State(){functions = functions, constants = constantNodes,toDraw = toDraw,toPrint = toPrint,errors = errors};
+        }
         public void Run(string input)
         {
             try
@@ -64,13 +78,25 @@ namespace Compiler
             }
             constants[constant.Name] = constant;
         }
+        public void ForceAddConstant(ConstantDeclarationNode constant)
+        {
+            if (functions.ContainsKey(constant.Name))
+            {
+                throw new Exception("A function with the name '" + constant.Name + "' already exists.");
+            }
+            else if(  constants.ContainsKey(constant.Name))
+            {
+                constants[constant.Name] = (ConstantDeclarationNode)constant.Clone();
+            }
+            else constants.Add(constant.Name,  constant);
+        }
         public FunctionDeclarationNode CallFunction(string name)
         {
             if (!functions.ContainsKey(name))
             {
                 throw new Exception("No function with the name '" + name + "' exists.");
             }
-            return functions[name];
+            return (FunctionDeclarationNode)functions[name].Clone();
         }
 
         public ConstantDeclarationNode GetConstant(string name)
@@ -79,7 +105,9 @@ namespace Compiler
             {
                 throw new Exception("No constant with the name '" + name + "' exists.");
             }
-            return constants[name];
+            return (ConstantDeclarationNode)constants[name].Clone();
         }
+
+        
     }
 }
