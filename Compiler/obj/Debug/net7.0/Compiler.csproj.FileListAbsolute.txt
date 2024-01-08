@@ -1,0 +1,12 @@
+F:\HULK\Compiler\bin\Debug\net7.0\Compiler.deps.json
+F:\HULK\Compiler\bin\Debug\net7.0\Compiler.dll
+F:\HULK\Compiler\bin\Debug\net7.0\Compiler.pdb
+F:\HULK\Compiler\obj\Debug\net7.0\Compiler.csproj.AssemblyReference.cache
+F:\HULK\Compiler\obj\Debug\net7.0\Compiler.GeneratedMSBuildEditorConfig.editorconfig
+F:\HULK\Compiler\obj\Debug\net7.0\Compiler.AssemblyInfoInputs.cache
+F:\HULK\Compiler\obj\Debug\net7.0\Compiler.AssemblyInfo.cs
+F:\HULK\Compiler\obj\Debug\net7.0\Compiler.csproj.CoreCompileInputs.cache
+F:\HULK\Compiler\obj\Debug\net7.0\Compiler.dll
+F:\HULK\Compiler\obj\Debug\net7.0\refint\Compiler.dll
+F:\HULK\Compiler\obj\Debug\net7.0\Compiler.pdb
+F:\HULK\Compiler\obj\Debug\net7.0\ref\Compiler.dll
