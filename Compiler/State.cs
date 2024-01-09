@@ -29,7 +29,7 @@ namespace Compiler
         /// Para pintar
         /// </summary>
         /// <returns></returns>
-        public List<Node> toDraw = new();
+        public List<Object> toDraw = new();
         /// <summary>
         /// Errores encontrados
         /// </summary>
@@ -64,9 +64,9 @@ namespace Compiler
                 errors.Add(new() { Error = e.ToString() });
             }
         }
-        public void AddToDraw(Node node)
+        public void AddToDraw(Object obj)
         {
-            toDraw.Add(node);
+            toDraw.Add(obj);
         }
         /// <summary>
         /// Retorna verdadero si contiene una funcion con functionName

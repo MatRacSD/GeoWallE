@@ -74,7 +74,7 @@ namespace Compiler
             }
             else
             {
-                SequenceNode seq = (SequenceNode)body.Evaluate(state);
+                Sequence seq = (Sequence)((UnaryExpressionNode)body.Evaluate(state).Value);
                 for (int i = 0; i < constants.Count; i++)
                 {
                     if (constants[i].Type == TokenType.GuionBajo)
@@ -101,23 +101,24 @@ namespace Compiler
         {
 
         }
-        public PointNode point { get; set; }
+        public Point point { get; set; }
 
         public PointDeclarationNode(string pName)
         {
-            point = new PointNode(pName);
+            point = new Point(pName);
         }
         public override Node Evaluate(State state)
         {
-            state.AddConstant(new ConstantDeclarationNode() { Name = point.pointName, Value = point });
+            state.AddConstant(new ConstantDeclarationNode() { Name = point.Name, Value = new UnaryExpressionNode(){obj  =  point} });
             return new NullNode();
         }
 
         public override object Clone()
         {
-            return new PointDeclarationNode() { point = (PointNode)point.Clone() };
+            return new PointDeclarationNode() { point = (Point)point };
         }
     }
+    /*
     public class PointNode : Node
     {
         private PointNode()
@@ -157,10 +158,12 @@ namespace Compiler
             return new PointNode() { pointName = pointName, xValue = xValue, yValue = yValue };
         }
     }
+    */
     /// <summary>
     /// Nodo que contiene el color///NO IMPLEMENTADO
     /// </summary>
 
+/*
     public class ColorNode : Node
     {
         public string Id { get; set; }
@@ -175,9 +178,11 @@ namespace Compiler
             throw new NotImplementedException();
         }
     }
+    */
     /// <summary>
     /// Nodo que contiene el valor de una medida
     /// </summary>
+    /*
     public class MeasureNode : Node
     {
         public double mValue;
@@ -192,6 +197,7 @@ namespace Compiler
             return new NumberNode() { Value = mValue };
         }
     }
+    */
     /// <summary>
     /// Nodo que contiene objeto a pintar
     /// </summary>
@@ -290,19 +296,19 @@ namespace Compiler
             {
                 case "line":
                     if (Arguments.Count != 2) throw new Exception("Expected 2 arguments in function line call");
-                    return new LineNode("", (PointNode)Arguments[0].Evaluate(state), (PointNode)Arguments[1].Evaluate(state));
+                    return new UnaryExpressionNode(){obj = new Line("", ((UnaryExpressionNode)Arguments[0].Evaluate(state)).obj as Point, ((UnaryExpressionNode)Arguments[1].Evaluate(state)).obj as Point,LineType.Line)};
                 case "segment":
                     if (Arguments.Count != 2) throw new Exception("Expected 2 arguments in function line call");
-                    return new SegmentNode("", (PointNode)Arguments[0].Evaluate(state), (PointNode)Arguments[1].Evaluate(state));
+                    return new UnaryExpressionNode(){obj = new Line("", ((UnaryExpressionNode)Arguments[0].Evaluate(state)).obj as Point, ((UnaryExpressionNode)Arguments[1].Evaluate(state)).obj as Point,LineType.Segment)};
                 case "ray":
                     if (Arguments.Count != 2) throw new Exception("Expected 2 arguments in function line call");
-                    return new RayNode("", (PointNode)Arguments[0].Evaluate(state), (PointNode)Arguments[1].Evaluate(state));
+                    return new UnaryExpressionNode(){obj = new Line("", ((UnaryExpressionNode)Arguments[0].Evaluate(state)).obj as Point, ((UnaryExpressionNode)Arguments[1].Evaluate(state)).obj as Point,LineType.Ray)};
                 case "circle":
                     if (Arguments.Count != 2) throw new Exception("Expected 2 arguments in function circle call");
-                    return new CircleNode("", (PointNode)Arguments[0].Evaluate(state), (NumberNode)Arguments[1].Evaluate(state));
+                    return new UnaryExpressionNode(){obj =  new Circle("", ((UnaryExpressionNode)Arguments[0].Evaluate(state)).obj as Point, ((UnaryExpressionNode)Arguments[1].Evaluate(state)).obj as Number)};
                 case "arc":
                     if (Arguments.Count != 4) throw new Exception("Expected 4 arguments in function arc call");
-                    return new ArcNode("", (PointNode)Arguments[0].Evaluate(state), (PointNode)Arguments[1].Evaluate(state), (PointNode)Arguments[2].Evaluate(state), (NumberNode)Arguments[3].Evaluate(state));
+                    return new UnaryExpressionNode(){obj =  new Arc("", ((UnaryExpressionNode)Arguments[0].Evaluate(state)).obj as Point,((UnaryExpressionNode)Arguments[1].Evaluate(state)).obj as Point ,((UnaryExpressionNode)Arguments[2].Evaluate(state)).obj as Point,((UnaryExpressionNode)Arguments[3].Evaluate(state)).obj as Number)};
                 case "print":
                     if (Arguments.Count != 1) throw new Exception("Expected 1 argument in function print");
                     {
@@ -310,7 +316,8 @@ namespace Compiler
                         Node resultNode = Arguments[0].Evaluate(state);
                         if (resultNode.GetType().ToString() == "Compiler.NumberNode")
                         {
-                            state.toPrint.Add(((NumberNode)resultNode).Value.ToString());
+                            throw new Exception("PRINT NOT IMPLEMENTED");
+                            //.toPrint.Add(((NumberNode)resultNode).Value.ToString());
                         }
                         else state.toPrint.Add("No se pudo imprimir -->> " + resultNode.GetType());
                     }
@@ -331,6 +338,7 @@ namespace Compiler
     /// <summary>
     /// Nodo que contiene una secuencia
     /// </summary>
+    /*
     public class SequenceNode : Node
     {
         public List<Node> nodes = new();
@@ -373,6 +381,7 @@ namespace Compiler
             return this;
         }
     }
+    */
     /// <summary>
     /// Nodo que contiene una declaracion de constante
     /// </summary>
@@ -417,6 +426,7 @@ namespace Compiler
     /// <summary>
     /// Nodo que contiene un numero
     /// </summary>
+    /*
     public class NumberNode : Node
     {
         public double Value { get; set; }
@@ -431,9 +441,11 @@ namespace Compiler
             return this;
         }
     }
+    */
     /// <summary>
     /// Nodo que contiene un segmento
     /// </summary>
+/*
     public class SegmentNode : Node
 
     {
@@ -466,32 +478,35 @@ namespace Compiler
     /// <summary>
     /// Nodo que contiene una declaracion de segmento
     /// </summary>
+    /// */
     public class SegmentDeclarationNode : Node
     {
-        SegmentNode line;
+        Line line;
         public SegmentDeclarationNode(string Name)
         {
-            line = new SegmentNode(Name);
+            line = new Line(Name,LineType.Segment);
         }
-        private SegmentDeclarationNode(SegmentNode segmentNode)
+        private SegmentDeclarationNode(Line segment)
         {
-            line = segmentNode;
+            line = segment;
         }
 
         public override object Clone()
         {
-            return new SegmentDeclarationNode((SegmentNode)line.Clone());
+            return new SegmentDeclarationNode(line);
         }
 
         public override Node Evaluate(State state)
         {
-            state.AddConstant(new ConstantDeclarationNode() { Name = line.lineName, Value = line });
+            state.AddConstant(new ConstantDeclarationNode() { Name = line.name, Value = new UnaryExpressionNode(){obj = line }});
             return new NullNode();
         }
     }
     /// <summary>
     /// Nodo que contiene un rayo
     /// </summary>
+    /// 
+    /*
     public class RayNode : Node
 
     {
@@ -521,35 +536,37 @@ namespace Compiler
             return new RayNode(lineName, (PointNode)pointA.Clone(), (PointNode)pointB.Clone());
         }
     }
+    */
     /// <summary>
     /// Nodo que contiene una declaracion de rayo
     /// </summary>
     public class RayDeclarationNode : Node
     {
-        RayNode ray;
+        Line ray;
         public RayDeclarationNode(string Name)
         {
-            ray = new RayNode(Name);
+            ray = new Line(Name,LineType.Ray);
         }
-        private RayDeclarationNode(RayNode Ray)
+        private RayDeclarationNode(Line Ray)
         {
             ray = Ray;
         }
 
         public override object Clone()
         {
-            return new RayDeclarationNode((RayNode)ray.Clone());
+            return new RayDeclarationNode(ray);
         }
 
         public override Node Evaluate(State state)
         {
-            state.AddConstant(new ConstantDeclarationNode() { Name = ray.lineName, Value = ray });
+            state.AddConstant(new ConstantDeclarationNode() { Name = ray.name, Value = new UnaryExpressionNode(){obj = ray }});
             return new NullNode();
         }
     }
     /// <summary>
     /// Nodo que contiene una linea
     /// </summary>
+    /*
     public class LineNode : Node
 
     {
@@ -579,36 +596,39 @@ namespace Compiler
             return new LineNode(lineName, (PointNode)pointA.Clone(), (PointNode)pointB.Clone());
         }
     }
+    */
     /// <summary>
     /// Nodo que contiene  una declaracion de linea
     /// </summary>
     public class LineDeclarationNode : Node
     {
-        LineNode line;
+        Line line;
         public LineDeclarationNode(string Name)
         {
-            line = new LineNode(Name);
+            line = new Line(Name,LineType.Line);
         }
 
-        private LineDeclarationNode(LineNode Line)
+        private LineDeclarationNode(Line Line)
         {
             line = Line;
         }
 
         public override object Clone()
         {
-            return new LineDeclarationNode((LineNode)line.Clone());
+            return new LineDeclarationNode(line);
         }
 
         public override Node Evaluate(State state)
         {
-            state.AddConstant(new ConstantDeclarationNode() { Name = line.lineName, Value = line });
+            state.AddConstant(new ConstantDeclarationNode() { Name = line.name, Value = new UnaryExpressionNode(){obj = line }});
             return new NullNode();
         }
     }
     /// <summary>
     /// Nodo que contiene un circulo
     /// </summary>
+    //
+    /*
     public class CircleNode : Node
     {
         public string Name;
@@ -638,12 +658,13 @@ namespace Compiler
             return this;
         }
     }
+    */
     /// <summary>
     /// Nodo que contiene una declaracion de circulo
     /// </summary>
     public class CircleDeclarationNode : Node
     {
-        private CircleDeclarationNode(CircleNode Circle)
+        private CircleDeclarationNode(Circle Circle)
         {
             circle = Circle;
         }
@@ -651,21 +672,23 @@ namespace Compiler
         {
             circle = new(Name);
         }
-        public CircleNode circle;
+        public Circle circle;
         public override Node Evaluate(State state)
         {
-            state.AddConstant(new ConstantDeclarationNode() { Name = circle.Name, Value = circle });
+            state.AddConstant(new ConstantDeclarationNode() { Name = circle.Name, Value = new UnaryExpressionNode{obj =  circle }});
             return new NullNode();
         }
 
         public override object Clone()
         {
-            return new CircleDeclarationNode((CircleNode)circle.Clone());
+            return new CircleDeclarationNode(circle);
         }
     }
     /// <summary>
     /// Nodo que contiene un arco
     /// </summary>
+    /// 
+    /*
     public class ArcNode : Node
     {
         public string Name;
@@ -702,13 +725,14 @@ namespace Compiler
             return this;
         }
     }
+    */
     /// <summary>
     /// Nodo que contiene una declaracion de arco
     /// </summary>
     public class ArcDeclarationNode : Node
     {
-        public ArcNode arc;
-        private ArcDeclarationNode(ArcNode arcNode)
+        public Arc arc;
+        private ArcDeclarationNode(Arc arcNode)
         {
             arc = arcNode;
         }
@@ -720,12 +744,12 @@ namespace Compiler
 
         public override object Clone()
         {
-            return new ArcDeclarationNode((ArcNode)arc.Clone());
+            return new ArcDeclarationNode(arc);
         }
 
         public override Node Evaluate(State state)
         {
-            state.AddConstant(new ConstantDeclarationNode() { Name = arc.Name, Value = arc });
+            state.AddConstant(new ConstantDeclarationNode() { Name = arc.Name,Value = new UnaryExpressionNode(){ obj = arc }});
             return new NullNode();
         }
     }
@@ -859,9 +883,11 @@ namespace Compiler
 
         public override Node Evaluate(State state)
         {
-            if (((NumberNode)Condition.Evaluate(state)).Value == 0)
+            if (((UnaryExpressionNode)Condition.Evaluate(state)).obj is Number )
             {
+                if((((UnaryExpressionNode)Condition.Evaluate(state)).obj as Number).Value == 0)
                 return ElseBranch.Evaluate(state);
+                else return ThenBranch.Evaluate(state);
             }
             else return ThenBranch.Evaluate(state);
         }
@@ -890,6 +916,19 @@ namespace Compiler
         public override object Clone()
         {
             return new UndefinedNode();
+        }
+
+        public override Node Evaluate(State state)
+        {
+            return this;
+        }
+    }
+    public class UnaryExpressionNode : Node
+    {
+        public Object obj {get; set;}
+        public override object Clone()
+        {
+            return this;
         }
 
         public override Node Evaluate(State state)

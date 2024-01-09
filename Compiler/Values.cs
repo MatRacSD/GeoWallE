@@ -13,6 +13,8 @@ namespace Compiler
             isRepresentable = IsRepresentable;
         }
 
+        
+
         public virtual int GetCode()
         {
             return 0;
@@ -26,6 +28,22 @@ namespace Compiler
 
 
     }
+
+    public class Color : Object
+    {
+
+       public Color() : base(false)
+       {
+
+       }
+        private Dictionary<string,float[]> colors = new()
+        {
+             //NOT IMPLEMENTED
+        };
+        float[] rbga;
+    }
+
+    
 
     public class Point : Object
     {
@@ -143,14 +161,16 @@ namespace Compiler
         public Point pointB { get; private set; }
 
         public LineType lineType {get; private set;}
-        public Line(string Name) : base(true)
+        public Line(string Name, LineType lineType) : base(true)
         {
+            this.lineType = lineType;
             name = Name;
             pointA = new Point("");
             pointB = new Point("");
         }
-        public Line(string Name, Point pointA, Point pointB) : base(true)
+        public Line(string Name, Point pointA, Point pointB,LineType lineType) : base(true)
         {
+            this.lineType = lineType;
             name = Name;
             this.pointA = pointA;
             this.pointB = pointB;
@@ -217,7 +237,7 @@ namespace Compiler
 
         List<Object> objects = new();
         private string Type = "none";
-
+        public int Count {get => objects.Count;}
         public bool isUndefined { get; set; }
         private bool isInfinite;
         public Sequence(bool isInfinite) : base(false)
@@ -241,7 +261,7 @@ namespace Compiler
 
     public class String : Object
     {
-        private string content;
+        public string content {get; private set;}
         public String(string content) : base(false)
         {
            this.content = content;
