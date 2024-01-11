@@ -66,8 +66,11 @@ public partial class CodeEditorScript : CodeEdit
 				outputConsole.Text += item.Error;
 			}
 
-			foreach (Compiler.Object fig in state.toDraw)
+			foreach (var terna in state.toDraw)
 			{
+				Compiler.Object fig = terna.Key;
+				string label = terna.Value.Item1;
+				Godot.Color color = new Godot.Color(){R = terna.Value.Item2.rbga[0],G = terna.Value.Item2.rbga[1],B = terna.Value.Item2.rbga[2],A = 1};
 				switch (fig.GetType().ToString()) //Se pintan los nodos
 				{
 					case "Compiler.Point": //Se pinta el punto
@@ -79,6 +82,8 @@ public partial class CodeEditorScript : CodeEdit
 						sprite.Position = new Vector2((float)point[0], (float)point[1]);
 						sprite.Scale = new Vector2(0.01f, 0.01f);
 						plane.AddChild(sprite);
+						plane.MoveChild(sprite,0);
+						plane.AddChild(CreateLabel(label, (float)point[0] + 10, (float)point[1]));
 						continue;
 
 					case "Compiler.Line": //Se pinta la linea
@@ -92,9 +97,11 @@ public partial class CodeEditorScript : CodeEdit
 							float[] toDrawPoints = CalculateLinePoints((float)p1[0], (float)p1[1], (float)p2[0], (float)p2[1]);
 
 							line2D.Points = new Vector2[] { new(toDrawPoints[0], toDrawPoints[1]), new(toDrawPoints[2], toDrawPoints[3]) };
-							line2D.DefaultColor = new Godot.Color(1, 0.3f, 0.3f, 1);
+							line2D.DefaultColor = color;
 							line2D.Width = 2;
+							plane.AddChild(CreateLabel(label, (float)p1[0], (float)p1[1]));
 							plane.AddChild(line2D);
+							plane.MoveChild(line2D,0);
 						} //se dibuja
 						else if ((fig as Line).lineType is LineType.Segment)
 						{
@@ -103,9 +110,11 @@ public partial class CodeEditorScript : CodeEdit
 							double[] p11 = toDraw2.pointA.GetPair();
 							double[] p21 = toDraw2.pointB.GetPair();
 							line2D2.Points = new Vector2[] { new((float)p11[0], (float)p11[1]), new((float)p21[0], (float)p21[1]) };
-							line2D2.DefaultColor = new Godot.Color(1, 0.3f, 0.3f, 1);
+							line2D2.DefaultColor = color;
 							line2D2.Width = 2;
 							plane.AddChild(line2D2);
+							plane.MoveChild(line2D2,0);
+							plane.AddChild(CreateLabel(label, (float)p11[0], (float)p21[1]));
 							break;
 						}
 						else if ((fig as Line).lineType is LineType.Ray)
@@ -116,9 +125,11 @@ public partial class CodeEditorScript : CodeEdit
 							double[] p22 = rayToDraw.pointB.GetPair();
 							float[] proyection = CalculateRayPoints((float)p12[0], (float)p12[1], (float)p22[0], (float)p22[1]);
 							line2D1.Points = new Vector2[] { new((float)p12[0], (float)p12[1]), new(proyection[0], proyection[1]) };
-							line2D1.DefaultColor = new Godot.Color(1, 0.3f, 0.3f, 1);
+							line2D1.DefaultColor = color;
 							line2D1.Width = 2;
+							plane.AddChild(CreateLabel(label, (float)p12[0], (float)p22[1]));
 							plane.AddChild(line2D1);
+							plane.MoveChild(line2D1,0);
 							break;
 						}
 						break;
@@ -129,8 +140,11 @@ public partial class CodeEditorScript : CodeEdit
 						var circleLines = circle.Draw();
 						foreach (var cline in circleLines)
 						{
+							cline.DefaultColor = color;
 							plane.AddChild(cline);
+							plane.MoveChild(cline,0);
 						}
+						plane.AddChild(CreateLabel(label, (float)((Point)c.center).xValue + (float)c.radius.Value, (float)((Point)c.center).yValue + (float)c.radius.Value));
 						break;
 					//case "Compiler.Segment": //Se dibuja el segmento
 
@@ -149,13 +163,19 @@ public partial class CodeEditorScript : CodeEdit
 						Line2D[] arcLines = arcToDraw.Draw();
 						foreach (Line2D item in arcLines)
 						{
+							item.DefaultColor = color;
 							plane.AddChild(item);
+							plane.MoveChild(item,0);
+							
 						}
+						AddChild(CreateLabel(label, (float)((Point)arc.center).xValue + (float)arc.radio.Value, (float)((Point)arc.center).yValue + (float)arc.radio.Value));
 						break;
 					default:
 						continue;
 				}
+				
 			}
+			//	outputConsole.Text += state.toPrint.Count;
 			foreach (string item in state.toPrint)
 			{
 				outputConsole.Text += item + "\n";
@@ -184,6 +204,23 @@ public partial class CodeEditorScript : CodeEdit
 			delayTimer.Stop();
 			delayTimer.Start();
 		}
+	}
+	private Label CreateLabel(string labelText, float x, float y)
+	{
+		// Crear una nueva instancia de Label
+		var label = new Godot.Label();
+		
+
+		// Establecer el texto del label
+		label.Text = labelText;
+		
+
+		// Establecer la posición del label
+		label.Position = new Godot.Vector2(x, y);
+		label.Modulate = new Godot.Color(0, 0, 0, 1);
+
+		// Añadir el label como hijo del nodo actual
+		return label;
 	}
 	//Guarda el archivo actual como filename.geo
 	public void CreateFile(string title, string text)

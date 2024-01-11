@@ -18,135 +18,318 @@ namespace Compiler
             {5000,InterceptCircleArc},
             {10000,InterceptArcs}
         };
-        public static Node BinaryOperation(Node left, Node right, TokenType Operator)
-        {
-            /*
-            switch (Operator)
+        private static Dictionary<TokenType, Func<Object,Object,Object>> operations = new()
             {
-                case TokenType.Plus:
-                    if (left.GetType().ToString() == "Compiler.NumberNode")
+              {TokenType.Plus,Sum},
+              {TokenType.Minus,Minus},
+              {TokenType.Multiply,Multiply},
+              {TokenType.Divide,Division},
+              {TokenType.DivideRest,RestDivision},
+              {TokenType.LessThan,LessThan},
+              {TokenType.GreaterThan,GreaterThan},
+              {TokenType.GreaterThanEqual,GreaterOrEqualThan},
+              {TokenType.LessThanEqual,LessOrEqualThan},
+              {TokenType.Equals,EqualsTo},
+              {TokenType.NotEqual,NotEqualsTo}
+            };
+        public static Node BinaryOperation(Node left, Node right, TokenType Operator, State state)
+        {
+            Object leftObj = (left as UnaryExpressionNode).GetValue(state);
+            Object rightObj = (right as UnaryExpressionNode).GetValue(state);
+           
+            if(operations.ContainsKey(Operator))
+            {
+                return new UnaryExpressionNode( operations[Operator](leftObj,rightObj));
+            }
+            else throw new Exception("INVALID OPERATOR: " + Operator    );
+
+
+        }
+
+
+
+        private static Object Sum(Object o1, Object o2)
+        {
+            if (o1 is String && o2 is Number)
+            {
+                return o1 as String + (o2 as Number);
+            }
+            else if (o1 is Number)
+            {
+                if (o1 is Number)
+                {
+                    if (o2 is Number)
                     {
-                        if (right.GetType().ToString() == "Compiler.NumberNode")
-                        {
-                            return new NumberNode() { Value = ((NumberNode)left).Value + ((NumberNode)right).Value };
-                        }
-                        throw new Exception("Expected number in + operation and got: " + left.GetType());
-                    }
-                    else throw new Exception("Expected number in + operation and got: " + right.GetType());
-                case TokenType.Minus:
-                    if (left.GetType().ToString() == "Compiler.NumberNode")
-                    {
-                        if (right.GetType().ToString() == "Compiler.NumberNode")
-                        {
-                            return new NumberNode() { Value = ((NumberNode)left).Value - ((NumberNode)right).Value };
-                        }
-                        throw new Exception("Expected number in + operation and got: " + left.GetType());
+                        return o1 as Number + (o2 as Number);
                     }
 
-                    else throw new Exception("Expected number in + operation and got: " + right.GetType());
-                case TokenType.GreaterThan:
-                    if (left.GetType().ToString() == "Compiler.NumberNode")
-                    {
-                        if (right.GetType().ToString() == "Compiler.NumberNode")
-                        {
-                            if (((NumberNode)left).Value > ((NumberNode)right).Value)
-                                return new NumberNode() { Value = 1 };
-                            else return new NumberNode() { Value = 0 };
-                        }
-                        throw new Exception("Expected number in > operation and got: " + left.GetType());
-                    }
+                }
+            }
+            else if (o1 is Measure)
+            {
+                if (o2 is Measure)
+                {
+                    return o1 as Measure + (o2 as Measure);
+                }
+            }
 
-                    else throw new Exception("Expected number in > operation and got: " + right.GetType());
-                case TokenType.LessThan:
-                    if (left.GetType().ToString() == "Compiler.NumberNode")
-                    {
-                        if (right.GetType().ToString() == "Compiler.NumberNode")
-                        {
-                            if (((NumberNode)left).Value < ((NumberNode)right).Value)
-                                return new NumberNode() { Value = 1 };
-                            else return new NumberNode() { Value = 0 };
-                        }
-                        throw new Exception("Expected number in < operation and got: " + left.GetType());
-                    }
+            throw new Exception("INVALID SUM OPERATION BETWEEN: " + o1.GetType() + " and + " + o2.GetType());
+        }
 
-                    else throw new Exception("Expected number in < operation and got: " + right.GetType());
-                case TokenType.GreaterThanEqual:
-                    if (left.GetType().ToString() == "Compiler.NumberNode")
-                    {
-                        if (right.GetType().ToString() == "Compiler.NumberNode")
-                        {
-                            if (((NumberNode)left).Value >= ((NumberNode)right).Value)
-                                return new NumberNode() { Value = 1 };
-                            else return new NumberNode() { Value = 0 };
-                        }
-                        throw new Exception("Expected number in >= operation and got: " + left.GetType());
-                    }
-
-                    else throw new Exception("Expected number in >= operation and got: " + right.GetType());
-                case TokenType.LessThanEqual:
-                    if (left.GetType().ToString() == "Compiler.NumberNode")
-                    {
-                        if (right.GetType().ToString() == "Compiler.NumberNode")
-                        {
-                            if (((NumberNode)left).Value <= ((NumberNode)right).Value)
-                                return new NumberNode() { Value = 1 };
-                            else return new NumberNode() { Value = 0 };
-                        }
-                        throw new Exception("Expected number in <= operation and got: " + left.GetType());
-                    }
-
-                    else throw new Exception("Expected number in <= operation and got: " + right.GetType());
-                case TokenType.EqualEqual:
-                    if (left.GetType().ToString() == "Compiler.NumberNode")
-                    {
-                        if (right.GetType().ToString() == "Compiler.NumberNode")
-                        {
-                            if (((NumberNode)left).Value == ((NumberNode)right).Value)
-                                return new NumberNode() { Value = 1 };
-                            else return new NumberNode() { Value = 0 };
-                        }
-                        throw new Exception("Expected number in == operation and got: " + left.GetType());
-                    }
-
-                    else throw new Exception("Expected number in == operation and got: " + right.GetType());
-                case TokenType.Divide:
-                    if (left.GetType().ToString() == "Compiler.NumberNode")
-                    {
-                        if (right.GetType().ToString() == "Compiler.NumberNode")
-                        {
-                            return new NumberNode() { Value = ((NumberNode)left).Value / ((NumberNode)right).Value };
-                        }
-                        throw new Exception("Expected number in / operation and got: " + left.GetType());
-                    }
-                    else throw new Exception("Expected number in / operation and got: " + right.GetType());
-                case TokenType.Multiply:
-                    if (left.GetType().ToString() == "Compiler.NumberNode")
-                    {
-                        if (right.GetType().ToString() == "Compiler.NumberNode")
-                        {
-                            return new NumberNode() { Value = ((NumberNode)left).Value * ((NumberNode)right).Value };
-                        }
-                        throw new Exception("Expected number in * operation and got: " + left.GetType());
-                    }
-                    else throw new Exception("Expected number in * operation and got: " + right.GetType());
-                case TokenType.DivideRest:
-
-                    if (left.GetType().ToString() == "Compiler.NumberNode")
-                    {
-                        if (right.GetType().ToString() == "Compiler.NumberNode")
-                        {
-                            return new NumberNode() { Value = ((NumberNode)left).Value % ((NumberNode)right).Value };
-                        }
-                        throw new Exception("Expected number in % operation and got: " + left.GetType());
-                    }
-                    else throw new Exception("Expected number in % operation and got: " + right.GetType());
-                default:
-                    throw new Exception("Unexpected Operator :" + Operator);
+        private static Object Minus(Object o1, Object o2)
+        {
+            if (o1 is Number)
+            {
+                if (o2 is Number)
+                {
+                    return o1 as Number - (o2 as Number);
+                }
 
             }
-            */
-            throw new Exception("BINARY OPERATIONS UNDER CHANGE");
+            else if (o1 is Measure)
+            {
+                if (o2 is Measure)
+                {
+                    return o1 as Measure - (o2 as Measure);
+                }
+            }
+            throw new Exception("INVALID MINUS OPERATION BETWEEN: " + o1.GetType() + " and + " + o2.GetType());
+
         }
+
+        private static Object Multiply(Object o1, Object o2)
+        {
+            if (o1 is Number)
+            {
+                if (o2 is Number)
+                {
+                    return (o1 as Number) * (o2 as Number);
+                }
+                else if (o2 is Measure)
+                {
+                    return (o1 as Number) * (o2 as Measure);
+                }
+
+            }
+            else if (o1 is Measure)
+            {
+                if (o2 is Number)
+                {
+                    return (o1 as Measure) * (o2 as Number);
+                }
+            }
+            throw new Exception("INVALID MULTIPLY OPERATION BETWEEN: " + o1.GetType() + " and + " + o2.GetType());
+        }
+
+        private static Object Division(Object o1, Object o2)
+        {
+            if (o1 is Number)
+            {
+                if (o2 is Number)
+                {
+                    return (o1 as Number) / (o2 as Number);
+                }
+
+
+            }
+            else if (o1 is Measure)
+            {
+                if (o2 is Number)
+                {
+                    return (o1 as Measure) / (o2 as Number);
+                }
+                else if (o2 is Measure)
+                {
+                    return (o1 as Measure) / (o2 as Measure);
+                }
+            }
+            throw new Exception("INVALID DIVISION OPERATION BETWEEN: " + o1.GetType() + " and + " + o2.GetType());
+        }
+
+        private static Object RestDivision(Object o1, Object o2)
+        {
+            if (o1 is Number)
+            {
+                if (o2 is Number)
+                {
+                    return (o1 as Number) % (o2 as Number);
+                }
+
+
+            }
+
+            throw new Exception("INVALID REST OPERATION BETWEEN: " + o1.GetType() + " and + " + o2.GetType());
+        }
+
+        private static Object LessThan(Object o1, Object o2)
+        {
+            if (o1 is Number)
+            {
+                if (o2 is Number)
+                {
+                    return new Number(GetTrue((o1 as Number).Value < (o2 as Number).Value));
+                }
+                else if (o2 is Measure)
+                {
+                    return new Number(GetTrue((o1 as Number).Value < (o2 as Measure).Value));
+                }
+
+
+            }
+            else if (o1 is Measure)
+            {
+                if (o2 is Number)
+                {
+                    return new Number(GetTrue((o1 as Measure).Value < (o2 as Number).Value));
+                }
+                else if (o2 is Measure)
+                {
+                    return new Number(GetTrue((o1 as Measure).Value < (o2 as Measure).Value));
+                }
+            }
+            throw new Exception("INVALID LESS OPERATION BETWEEN: " + o1.GetType() + " and + " + o2.GetType());
+        }
+        private static Object GreaterThan(Object o1, Object o2)
+        {
+            if (o1 is Number)
+            {
+                if (o2 is Number)
+                {
+                    return new Number(GetTrue((o1 as Number).Value > (o2 as Number).Value));
+                }
+                else if (o2 is Measure)
+                {
+                    return new Number(GetTrue((o1 as Number).Value > (o2 as Measure).Value));
+                }
+
+
+            }
+            else if (o1 is Measure)
+            {
+                if (o2 is Number)
+                {
+                    return new Number(GetTrue((o1 as Measure).Value > (o2 as Number).Value));
+                }
+                else if (o2 is Measure)
+                {
+                    return new Number(GetTrue((o1 as Measure).Value > (o2 as Measure).Value));
+                }
+            }
+            throw new Exception("INVALID GREATER OPERATION BETWEEN: " + o1.GetType() + " and + " + o2.GetType());
+        }
+        private static Object LessOrEqualThan(Object o1, Object o2)
+        {
+            if (o1 is Number)
+            {
+                if (o2 is Number)
+                {
+                    return new Number(GetTrue((o1 as Number).Value <= (o2 as Number).Value));
+                }
+                else if (o2 is Measure)
+                {
+                    return new Number(GetTrue((o1 as Number).Value <= (o2 as Measure).Value));
+                }
+
+
+            }
+            else if (o1 is Measure)
+            {
+                if (o2 is Number)
+                {
+                    return new Number(GetTrue((o1 as Measure).Value <= (o2 as Number).Value));
+                }
+                else if (o2 is Measure)
+                {
+                    return new Number(GetTrue((o1 as Measure).Value <= (o2 as Measure).Value));
+                }
+            }
+            throw new Exception("INVALID LESSEQUAL OPERATION BETWEEN: " + o1.GetType() + " and + " + o2.GetType());
+        }
+        private static Object GreaterOrEqualThan(Object o1, Object o2)
+        {
+            if (o1 is Number)
+            {
+                if (o2 is Number)
+                {
+                    return new Number(GetTrue((o1 as Number).Value >= (o2 as Number).Value));
+                }
+                else if (o2 is Measure)
+                {
+                    return new Number(GetTrue((o1 as Number).Value >= (o2 as Measure).Value));
+                }
+
+
+            }
+            else if (o1 is Measure)
+            {
+                if (o2 is Number)
+                {
+                    return new Number(GetTrue((o1 as Measure).Value >= (o2 as Number).Value));
+                }
+                else if (o2 is Measure)
+                {
+                    return new Number(GetTrue((o1 as Measure).Value >= (o2 as Measure).Value));
+                }
+            }
+            throw new Exception("INVALID GREATER OPERATION BETWEEN: " + o1.GetType() + " and + " + o2.GetType());
+        }
+        private static Object EqualsTo(Object o1, Object o2)
+        {
+            if (o1 is Number)
+            {
+                if (o2 is Number)
+                {
+                    return new Number(GetTrue((o1 as Number).Value == (o2 as Number).Value));
+                }
+                else if (o2 is Measure)
+                {
+                    return new Number(GetTrue((o1 as Number).Value == (o2 as Measure).Value));
+                }
+
+
+            }
+            else if (o1 is Measure)
+            {
+                if (o2 is Number)
+                {
+                    return new Number(GetTrue((o1 as Measure).Value == (o2 as Number).Value));
+                }
+                else if (o2 is Measure)
+                {
+                    return new Number(GetTrue((o1 as Measure).Value == (o2 as Measure).Value));
+                }
+            }
+            throw new Exception("INVALID EQUALS OPERATION BETWEEN: " + o1.GetType() + " and + " + o2.GetType());
+        }
+        private static Object NotEqualsTo(Object o1, Object o2)
+        {
+        if (o1 is Number)
+            {
+                if (o2 is Number)
+                {
+                    return new Number( GetTrue((o1 as Number).Value != (o2 as Number).Value));
+                }
+                else if (o2 is Measure)
+                {
+                    return new Number(GetTrue((o1 as Number).Value != (o2 as Measure).Value));
+                }
+
+
+            }
+            else if (o1 is Measure)
+            {
+                if (o2 is Number)
+                {
+                    return new Number( GetTrue((o1 as Measure).Value != (o2 as Number).Value));
+                }
+                else if (o2 is Measure)
+                {
+                    return new Number(GetTrue((o1 as Measure).Value != (o2 as Measure).Value));
+                }
+            }
+            throw new Exception("INVALID NOTEQUALS OPERATION BETWEEN: " + o1.GetType() + " and + " + o2.GetType());
+        }
+
         public static Node UnaryOperation(Node Operand, TokenType Operator)
         {
             /*
@@ -164,20 +347,20 @@ namespace Compiler
             }*/
             throw new Exception("UNARY OPERATIONS UNDER CHANGE");
         }
-        public static Node Distance(Node pointA, Node pointB)
+        public static Object Distance(Object pointA, Object pointB)
         {
-            /*
-            if (pointA.GetType().ToString() != pointB.GetType().ToString() && pointB.GetType().ToString() != "Compiler.PointNode")
+
+            if (pointA is Number && pointB is Number)
                 throw new Exception("Expected Type number at measure function and got: " + pointA.GetType().ToString() + " and " + pointA.GetType().ToString());
 
-            double[] p1 = ((PointNode)pointA).GetPair();
-            double[] p2 = ((PointNode)pointB).GetPair();
+            double[] p1 = ((Point)pointA).GetPair();
+            double[] p2 = ((Point)pointB).GetPair();
 
             double dx = p2[0] - p1[0];
             double dy = p2[1] - p1[1];
 
-            return new MeasureNode() { mValue = Math.Sqrt(dx * dx + dy * dy) };
-            */
+            return new Measure(Math.Sqrt(dx * dx + dy * dy));
+
             throw new Exception("DISTANCE OPERATIONS UNDER CHANGE");
 
         }
@@ -627,62 +810,69 @@ namespace Compiler
             else return true;
         }
         public static bool IsInArc(this Point inPoint, Arc arc)
-        {Point inputPoint = inPoint.Clone() as Point;
-    Point arcCenter = arc.center.Clone() as Point;
-    Point arcP1 = arc.p1.Clone() as Point;
-    Point arcP2 = arc.p2.Clone() as Point;
+        {
+            Point inputPoint = inPoint.Clone() as Point;
+            Point arcCenter = arc.center.Clone() as Point;
+            Point arcP1 = arc.p1.Clone() as Point;
+            Point arcP2 = arc.p2.Clone() as Point;
 
-    // Center the points at the origin
-    inputPoint.xValue -= arcCenter.xValue;
-    inputPoint.yValue -= arcCenter.yValue;
-    arcP1.xValue -= arcCenter.xValue;
-    arcP1.yValue -= arcCenter.yValue;
-    arcP2.xValue -= arcCenter.xValue;
-    arcP2.yValue -= arcCenter.yValue;
+            // Center the points at the origin
+            inputPoint.xValue -= arcCenter.xValue;
+            inputPoint.yValue -= arcCenter.yValue;
+            arcP1.xValue -= arcCenter.xValue;
+            arcP1.yValue -= arcCenter.yValue;
+            arcP2.xValue -= arcCenter.xValue;
+            arcP2.yValue -= arcCenter.yValue;
 
-    // Calculate the distances
-    double distanceInputPoint = Math.Sqrt(Math.Pow(inputPoint.xValue, 2) + Math.Pow(inputPoint.yValue, 2));
-    double distanceP1 = Math.Sqrt(Math.Pow(arcP1.xValue, 2) + Math.Pow(arcP1.yValue, 2));
+            // Calculate the distances
+            double distanceInputPoint = Math.Sqrt(Math.Pow(inputPoint.xValue, 2) + Math.Pow(inputPoint.yValue, 2));
+            double distanceP1 = Math.Sqrt(Math.Pow(arcP1.xValue, 2) + Math.Pow(arcP1.yValue, 2));
 
-    if (Math.Abs(distanceInputPoint - distanceP1) > 1e-10)
-    {
-        // The point is not on the circle defined by the arc
-        return false;
-    }
+            if (Math.Abs(distanceInputPoint - distanceP1) > 1e-10)
+            {
+                // The point is not on the circle defined by the arc
+                return false;
+            }
 
-    // Calculate the angles
-    double angleInputPoint = Math.Atan2(inputPoint.yValue,inputPoint.xValue);
-    double angleP1 = Math.Atan2(arcP1.yValue,arcP1.xValue);
-    double angleP2 = Math.Atan2(arcP2.yValue,arcP2.xValue);
+            // Calculate the angles
+            double angleInputPoint = Math.Atan2(inputPoint.yValue, inputPoint.xValue);
+            double angleP1 = Math.Atan2(arcP1.yValue, arcP1.xValue);
+            double angleP2 = Math.Atan2(arcP2.yValue, arcP2.xValue);
 
-    // Normalize the angles to [0, 2π]
-    if (angleInputPoint < 0) angleInputPoint += 2 * Math.PI;
-    if (angleP1 < 0) angleP1 += 2 * Math.PI;
-    if (angleP2 < 0) angleP2 += 2 * Math.PI;
+            // Normalize the angles to [0, 2π]
+            if (angleInputPoint < 0) angleInputPoint += 2 * Math.PI;
+            if (angleP1 < 0) angleP1 += 2 * Math.PI;
+            if (angleP2 < 0) angleP2 += 2 * Math.PI;
 
-    // Check if the point's angle is within the arc's angles
-    if (angleP1 > angleP2)
-    {
-        return angleP1 <= angleInputPoint || angleInputPoint <= angleP2;
-    }
-    else
-    {
-        return angleP1 <= angleInputPoint && angleInputPoint <= angleP2;
-    }
+            // Check if the point's angle is within the arc's angles
+            if (angleP1 > angleP2)
+            {
+                return angleP1 <= angleInputPoint || angleInputPoint <= angleP2;
+            }
+            else
+            {
+                return angleP1 <= angleInputPoint && angleInputPoint <= angleP2;
+            }
         }
 
         public static double RotateAngle(double inputAngle, double rotateRadians)
         {
-            
+
             double angleResult = inputAngle + rotateRadians;
 
-            if(angleResult > 2 * Math.PI)
+            if (angleResult > 2 * Math.PI)
             {
                 return angleResult - 2 * Math.PI;
             }
             else return angleResult;
-            
-            
+
+
+        }
+
+        public static double GetTrue(bool a)
+        {
+            if (a) return 1;
+            else return 0;
         }
 
     }

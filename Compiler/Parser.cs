@@ -45,6 +45,8 @@ namespace Compiler
             Token token = tokenList.Peek();
             switch (token.Type)
             {
+                case TokenType.String:
+                return LogicExpression();
                 case TokenType.Import:
                     return Import();
                 case TokenType.Let:
@@ -55,6 +57,8 @@ namespace Compiler
                     return PointExpression();
                 case TokenType.Circle:
                     return CircleExpression();
+                    case TokenType.Restore:
+                    return RestoreExpression();
                 case TokenType.Color:
                     return ColorExpression();
                 case TokenType.Line:
@@ -88,10 +92,18 @@ namespace Compiler
                     throw new Exception("Unexpected token: " + token.Type);
             }
         }
+
+        private Node RestoreExpression()
+        {
+            ExpectToken(TokenType.Restore);
+            return new RestoreNode();
+        }
+
         /// <summary>
         /// Parsea una expresionde tipo secuencia
         /// </summary>
         /// <returns></returns>
+
 
         private Node SequenceExpression()
         {
@@ -100,9 +112,9 @@ namespace Compiler
             while (Peek().Type != TokenType.CloseBrace && tokenList.HasMoreTokens())
             {
                 UnaryExpressionNode exp = (UnaryExpressionNode)Expression();
-                if(exp.IsValueAConstant())
+                //if(exp.IsValueAConstant())
                 seq.Add(exp.obj);
-                else seq.Add(exp.GetValue(state));
+                //else seq.Add(exp.GetValue(state));
                 if (Peek().Type != TokenType.CloseBrace)
                 {
                     ExpectToken(TokenType.Comma);
@@ -178,6 +190,7 @@ namespace Compiler
         /// <returns></returns>
         private Node SequencDeclarationExpression()
         {
+            
 
             SequencDeclarationNode seq = new();
             while (Peek().Type != TokenType.Equals && tokenList.HasMoreTokens())
@@ -220,7 +233,9 @@ namespace Compiler
 
         private Node ColorExpression()
         {
-            throw new NotImplementedException();
+            ExpectToken(TokenType.Color);
+            Token color = ExpectToken(TokenType.Identifier);
+            return new UnaryExpressionNode(new Color(color.Value));
         }
 
         /// <summary>
@@ -249,10 +264,19 @@ namespace Compiler
         private Node PointExpression()
         {
             ExpectToken(TokenType.Point);
-            Token tokenName = ExpectToken(TokenType.Identifier);
+            if (Peek().Type == TokenType.OpenParenthesis)
+            {
+                return FunctionCall("point");
+            }
+            else
+            {
+                Token tokenName = ExpectToken(TokenType.Identifier);
+
+                return new PointDeclarationNode(tokenName.Value);;
+            }
 
 
-            return new PointDeclarationNode(tokenName.Value);
+            
         }
         /// <summary>
         /// Parsea una expresion de tipo draw
@@ -361,7 +385,7 @@ namespace Compiler
                 }
             }
             ExpectToken(TokenType.CloseParenthesis);
-            return new FunctionCallNode { Name = funcName, Arguments = parametersNodes };
+            return new UnaryExpressionNode(new FunctionCall() { Name = funcName, Arguments = parametersNodes });
         }
 
         /// <summary>
@@ -399,9 +423,13 @@ namespace Compiler
             Token token = tokenList.Peek();
             switch (token.Type)
             {
+                case TokenType.String:
+                return LogicExpression();
 
                 case TokenType.Let:
                     return LogicExpression();
+                    case TokenType.Color:
+                    return ColorExpression();
                 case TokenType.Line:
                     return LineExpression();
                 case TokenType.Draw:
@@ -417,7 +445,7 @@ namespace Compiler
                 case TokenType.OpenParenthesis:
                     return LogicExpression();
 
-                case TokenType.String:
+                //case TokenType.String:
                 case TokenType.Point:
                     return PointExpression();
                 case TokenType.Circle:
@@ -555,6 +583,10 @@ namespace Compiler
                 }
 
                 else return ConstantCall(token.Value, token);
+            }
+            else if(token.Type == TokenType.String)
+            {
+                return new UnaryExpressionNode(new Compiler.String(token.Value));
             }
 
             else

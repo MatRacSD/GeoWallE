@@ -14,6 +14,17 @@ namespace Compiler
         /// </summary>
         /// <returns></returns>
         public Dictionary<string, ConstantDeclarationNode> constants = new();
+
+        public Color defaultColor = new("black");
+        public List<Color> activeColors = new();
+
+        public void Restore()
+        {
+            if(activeColors.Count > 0)
+            {
+                activeColors.RemoveAt(activeColors.Count - 1);
+            }
+        }
         
         /// <summary>
         /// Archivos importados
@@ -29,7 +40,9 @@ namespace Compiler
         /// Para pintar
         /// </summary>
         /// <returns></returns>
-        public List<Object> toDraw = new();
+        /// 
+        public Dictionary<Object,Tuple<string,Color>> toDraw = new();
+        //public List<Object> toDraw = new();
         /// <summary>
         /// Errores encontrados
         /// </summary>
@@ -64,9 +77,11 @@ namespace Compiler
                 errors.Add(new() { Error = e.ToString() });
             }
         }
-        public void AddToDraw(Object obj)
+        public void AddToDraw(Object obj, string label)
         {
-            toDraw.Add(obj);
+         if(activeColors.Count > 0)   
+            toDraw.Add(obj,new(label,activeColors.Last()));
+            else toDraw.Add(obj,new(label,defaultColor));
         }
         /// <summary>
         /// Retorna verdadero si contiene una funcion con functionName

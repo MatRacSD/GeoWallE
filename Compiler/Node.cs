@@ -48,6 +48,21 @@ namespace Compiler
             }
         }
     }
+    public class RestoreNode : Node
+    {
+        public override object Clone()
+        {
+            return this;
+        }
+
+
+        public override Node Evaluate(State state)
+        {
+            state.Restore();
+            return new NullNode();
+        }
+
+    }
     /// <summary>
     /// Nodo que contiene una declaracion de secuencia
     /// </summary>
@@ -61,17 +76,18 @@ namespace Compiler
             return new SequencDeclarationNode() { constants = constants, body = (Node)body.Clone() };
         }
 
+
+
         public override Node Evaluate(State state)
         {
-            if (body.Evaluate(state).GetType().ToString() != "Compiler.SequenceNode")
+            /*if (body.Evaluate(state).GetType().ToString() != "Compiler.SequenceNode")
             {
                 throw new Exception("Expected Sequence at sequence constants declarations");
-            }
-            else
-            {
+            } */
+            
 
                 Sequence seq = (Sequence)((UnaryExpressionNode)body.Evaluate(state)).GetValue(state);
-
+                //throw new Exception("asdasd__>>>" + seq.Count);
                 for (int i = 0; i < constants.Count; i++)
                 {
                     if (constants[i].Type == TokenType.GuionBajo)
@@ -85,7 +101,7 @@ namespace Compiler
                         else state.AddConstant(new() { Name = constants[i].Value, Value = seq.objects[i] });
                     }
                 }
-            }
+            
             return new NullNode();
         }
     }
@@ -220,7 +236,7 @@ namespace Compiler
                 Sequence seq = @object as Sequence;
                 for (int i = 0; i < seq.Count; i++)
                 {
-                    state.AddToDraw(((UnaryExpressionNode)seq.objects[i].Evaluate(state)).obj.GetValue(state));
+                    state.AddToDraw(((UnaryExpressionNode)seq.objects[i].Evaluate(state)).obj.GetValue(state),label);
                 }
                 return new NullNode();
             }
@@ -237,7 +253,7 @@ namespace Compiler
                     }
                 }
             } */
-            state.AddToDraw(@object.GetValue(state));
+            state.AddToDraw(@object.GetValue(state),label);
 
             return new NullNode();
         }
@@ -263,14 +279,16 @@ namespace Compiler
         }
         public Node GetValue(List<Node> args, State state)
         {
+            
             if (args.Count != Parameters.Count)
+
             {
                 throw new Exception("Expected " + Parameters.Count + "arguments and got " + args.Count);
             }
             State funcScope = (State)state.Clone();
             for (int i = 0; i < args.Count; i++)
             {
-                funcScope.ForceAddConstant(new ConstantDeclarationNode() { Name = Parameters[i], Value = ((Node)args[i].Clone()).Evaluate(funcScope) });
+                funcScope.ForceAddConstant(new ConstantDeclarationNode() { Name = Parameters[i], Value = (((Node)args[i].Clone()).Evaluate(funcScope) as UnaryExpressionNode).Evaluate(state) });
             }
             Node result = ((Node)Body.Clone()).Evaluate(funcScope);
             /*for (int i = 0; i < Parameters.Count; i++)
@@ -284,6 +302,8 @@ namespace Compiler
     /// <summary>
     /// Nodo que contiene una llamada a una funcion
     /// </summary>
+    /// 
+    /*
     public class FunctionCallNode : Node
     {
         public string Name { get; set; }
@@ -347,6 +367,7 @@ namespace Compiler
             }
         }
     }
+    */
     /// <summary>
     /// Nodo que contiene una secuencia
     /// </summary>
@@ -785,7 +806,7 @@ namespace Compiler
         {
 
 
-            return Operations.BinaryOperation(Left.Evaluate(state), Right.Evaluate(state), Operator);
+            return Operations.BinaryOperation(Left.Evaluate(state), Right.Evaluate(state), Operator, state);
         }
     }
     /// <summary>
@@ -857,7 +878,7 @@ namespace Compiler
             {
                 item.Evaluate(localState);
             }
-            Node node = Body.Evaluate(localState);
+            Node node = new UnaryExpressionNode((Body.Evaluate(localState)as UnaryExpressionNode).GetValue(localState));
             
             return node;
         }
@@ -938,7 +959,7 @@ namespace Compiler
     public class UnaryExpressionNode : Node
     {
 
-        public Object obj { get; private set; }
+        public Object obj { get;private  set; }
         public UnaryExpressionNode(Object @object)
         {
             obj = @object;
@@ -955,11 +976,20 @@ namespace Compiler
         }
         public override object Clone()
         {
+            return new UnaryExpressionNode(obj.Clone() as Object);
+            
+        }
+
+        public Node Evaluate(State state, int a)
+        {
+            //obj = obj.GetValue(state);
             return this;
         }
 
         public override Node Evaluate(State state)
         {
+            if(!(obj is ConstantCall  )){
+            obj = obj.GetValue(state);}
             return this;
         }
     }

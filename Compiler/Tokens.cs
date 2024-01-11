@@ -8,7 +8,7 @@ using System.Threading.Tasks.Dataflow;
 namespace Compiler
 {
 
-    
+
     public class Token
     {
         public TokenType Type { get; set; }
@@ -16,6 +16,8 @@ namespace Compiler
     }
     public enum TokenType
     {
+        Not,
+        NotEqual,
         Number,
         Plus,
         Minus,
@@ -44,6 +46,7 @@ namespace Compiler
         LessThanEqual,
         GreaterThanEqual,
         EqualEqual,
+        Restore,
         OpenBrace,
         CloseBrace,
         String,
@@ -141,6 +144,18 @@ namespace Compiler
                                 yield return new Token { Type = TokenType.CloseBrace, Value = "}" };
                                 position++;
                                 break;
+                            case '!':
+                                if (input[position + 1] == '=')
+                                {
+                                    yield return new Token { Type = TokenType.NotEqual, Value = "!=" };
+                                    position += 2;
+                                }
+                                else
+                                {
+                                    yield return new Token { Type = TokenType.Not, Value = "!" };
+                                    position++;
+                                }
+                                break;
                             case '"':
                                 yield return ReadString();
                                 break;
@@ -236,6 +251,13 @@ namespace Compiler
                     case "point":
                         type = TokenType.Point;
                         break;
+                        case "restore":
+                        type = TokenType.Restore;
+                        break;
+
+                    case "color":
+                        type = TokenType.Color;
+                        break;
                     case "line":
                         type = TokenType.Line;
                         break;
@@ -263,7 +285,7 @@ namespace Compiler
             }
             private Token ReadString()
             {
-                int start = ++position; 
+                int start = ++position;
                 while (position < input.Length && input[position] != '"')
                 {
                     position++;
@@ -275,7 +297,7 @@ namespace Compiler
                 }
 
                 string value = input.Substring(start, position - start);
-                position++; 
+                position++;
                 return new Token { Type = TokenType.String, Value = value };
 
             }
@@ -298,7 +320,7 @@ namespace Compiler
         {
             return tokens[index++];
         }
-       
+
 
         public Token Peek()
         {
@@ -323,7 +345,7 @@ namespace Compiler
                 }
                 if (p == 0 && i != index)
                 {
-                    
+
                     if (tokens[i].Type == TokenType.Equals)
                     {
                         return true;
