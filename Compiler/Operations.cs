@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Data;
 
 namespace Compiler
@@ -176,7 +177,7 @@ namespace Compiler
             double dy = p2[1] - p1[1];
 
             return new MeasureNode() { mValue = Math.Sqrt(dx * dx + dy * dy) };
-            */ 
+            */
             throw new Exception("DISTANCE OPERATIONS UNDER CHANGE");
 
         }
@@ -516,7 +517,7 @@ namespace Compiler
         }
         private static Sequence InterceptArcs(Object o1, Object o2)
         {
-            
+
             Arc arc1 = o1 as Arc;
             Arc arc2 = o2 as Arc;
             List<Point> intersections = new List<Point>();
@@ -625,42 +626,63 @@ namespace Compiler
 
             else return true;
         }
-        public static bool IsInArc(this Point inputPoint, Arc arc)
+        public static bool IsInArc(this Point inPoint, Arc arc)
+        {Point inputPoint = inPoint.Clone() as Point;
+    Point arcCenter = arc.center.Clone() as Point;
+    Point arcP1 = arc.p1.Clone() as Point;
+    Point arcP2 = arc.p2.Clone() as Point;
+
+    // Center the points at the origin
+    inputPoint.xValue -= arcCenter.xValue;
+    inputPoint.yValue -= arcCenter.yValue;
+    arcP1.xValue -= arcCenter.xValue;
+    arcP1.yValue -= arcCenter.yValue;
+    arcP2.xValue -= arcCenter.xValue;
+    arcP2.yValue -= arcCenter.yValue;
+
+    // Calculate the distances
+    double distanceInputPoint = Math.Sqrt(Math.Pow(inputPoint.xValue, 2) + Math.Pow(inputPoint.yValue, 2));
+    double distanceP1 = Math.Sqrt(Math.Pow(arcP1.xValue, 2) + Math.Pow(arcP1.yValue, 2));
+
+    if (Math.Abs(distanceInputPoint - distanceP1) > 1e-10)
+    {
+        // The point is not on the circle defined by the arc
+        return false;
+    }
+
+    // Calculate the angles
+    double angleInputPoint = Math.Atan2(inputPoint.yValue,inputPoint.xValue);
+    double angleP1 = Math.Atan2(arcP1.yValue,arcP1.xValue);
+    double angleP2 = Math.Atan2(arcP2.yValue,arcP2.xValue);
+
+    // Normalize the angles to [0, 2π]
+    if (angleInputPoint < 0) angleInputPoint += 2 * Math.PI;
+    if (angleP1 < 0) angleP1 += 2 * Math.PI;
+    if (angleP2 < 0) angleP2 += 2 * Math.PI;
+
+    // Check if the point's angle is within the arc's angles
+    if (angleP1 > angleP2)
+    {
+        return angleP1 <= angleInputPoint || angleInputPoint <= angleP2;
+    }
+    else
+    {
+        return angleP1 <= angleInputPoint && angleInputPoint <= angleP2;
+    }
+        }
+
+        public static double RotateAngle(double inputAngle, double rotateRadians)
         {
-            Point point = new("")
+            
+            double angleResult = inputAngle + rotateRadians;
+
+            if(angleResult > 2 * Math.PI)
             {
-                xValue = inputPoint.xValue - arc.center.xValue,
-                yValue = inputPoint.yValue - arc.center.yValue,
-            };
-
-            Point p1 = new("")
-            {
-                xValue = arc.p1.xValue - arc.center.xValue,
-                yValue = arc.p1.yValue - arc.center.yValue,
-            };
-            Point p2 = new("")
-            {
-                xValue = arc.p2.xValue - arc.center.xValue,
-                yValue = arc.p2.yValue - arc.center.yValue,
-            };
-
-            // Define vectors relative to p1 and p2
-            Point a = new Point("") { xValue = point.xValue - p1.xValue, yValue = point.yValue - p1.yValue };
-            Point b = new Point("") { xValue = p2.xValue - p1.xValue, yValue = p2.yValue - p1.yValue };
-            Point c = new Point("") { xValue = point.xValue - p2.xValue, yValue = point.yValue - p2.yValue };
-            Point d = new Point("") { xValue = p1.xValue - p2.xValue, yValue = p1.yValue - p2.yValue };
-
-            // Calculate cross products
-            double crossProduct1 = a.xValue * b.yValue - b.xValue * a.yValue;
-            double crossProduct2 = c.xValue * d.yValue - d.xValue * c.yValue;
-
-            // Calculate dot products
-            double dotProduct1 = a.xValue * b.xValue + a.yValue * b.yValue;
-            double dotProduct2 = c.xValue * d.xValue + c.yValue * d.yValue;
-
-            // Point is within arc if the sign of the cross products are the same
-            // and the dot product is greater than 0
-            return (crossProduct1 * crossProduct2 >= 0) && dotProduct1 >= 0 && dotProduct2 >= 0;
+                return angleResult - 2 * Math.PI;
+            }
+            else return angleResult;
+            
+            
         }
 
     }

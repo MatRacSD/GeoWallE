@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "F:\\wale\\Compiler\\Compiler.csproj": {}
+    "F:\\GeoWallE-main\\Compiler\\Compiler.csproj": {}
   },
   "projects": {
-    "F:\\wale\\Compiler\\Compiler.csproj": {
+    "F:\\GeoWallE-main\\Compiler\\Compiler.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "F:\\wale\\Compiler\\Compiler.csproj",
+        "projectUniqueName": "F:\\GeoWallE-main\\Compiler\\Compiler.csproj",
         "projectName": "Compiler",
-        "projectPath": "F:\\wale\\Compiler\\Compiler.csproj",
+        "projectPath": "F:\\GeoWallE-main\\Compiler\\Compiler.csproj",
         "packagesPath": "C:\\Users\\Raci\\.nuget\\packages\\",
-        "outputPath": "F:\\wale\\Compiler\\obj\\",
+        "outputPath": "F:\\GeoWallE-main\\Compiler\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Raci\\AppData\\Roaming\\NuGet\\NuGet.Config"

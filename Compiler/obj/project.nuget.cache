@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "NkS240ksxMk0MCiyDiN4BcBIyIyIN3QLN5AmjD3JXUDCe6gFaBvseU+ZFJXtNzM3sSwDS47sLhmjjJg6xnBWDw==",
+  "dgSpecHash": "qMIVKbbOHAw9dN99KpoE8+s90z3OsQUdnWawAT4hYo1VnGnWOeZOPzbvX79nGKHjnY5hxJXnnbowZr/wLB1kfQ==",
   "success": true,
-  "projectFilePath": "F:\\wale\\Compiler\\Compiler.csproj",
+  "projectFilePath": "F:\\GeoWallE-main\\Compiler\\Compiler.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Raci\\.nuget\\packages\\microsoft.netcore.app.ref\\6.0.20\\microsoft.netcore.app.ref.6.0.20.nupkg.sha512",
     "C:\\Users\\Raci\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\6.0.20\\microsoft.windowsdesktop.app.ref.6.0.20.nupkg.sha512",

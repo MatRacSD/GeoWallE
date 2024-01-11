@@ -1,0 +1,15 @@
+point p;
+point p1;
+point p2;
+d = 200;
+a = arc(p,p1,p2,200);
+point q;
+point q1;
+l = line(q,q1);
+draw l;
+draw a;
+draw ray(p,p1);
+draw p1;
+draw ray(p,p2);
+seq = intersect(a,l);
+draw seq;

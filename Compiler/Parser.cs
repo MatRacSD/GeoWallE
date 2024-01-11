@@ -96,17 +96,20 @@ namespace Compiler
         private Node SequenceExpression()
         {
             ExpectToken(TokenType.OpenBrace);
-            SequenceNode seq = new();
+            Sequence seq = new(false);
             while (Peek().Type != TokenType.CloseBrace && tokenList.HasMoreTokens())
             {
-                seq.Add(Expression(), state);
+                UnaryExpressionNode exp = (UnaryExpressionNode)Expression();
+                if(exp.IsValueAConstant())
+                seq.Add(exp.obj);
+                else seq.Add(exp.GetValue(state));
                 if (Peek().Type != TokenType.CloseBrace)
                 {
                     ExpectToken(TokenType.Comma);
                 }
             }
             ExpectToken(TokenType.CloseBrace);
-            return seq;
+            return new UnaryExpressionNode( seq);
         }
 
         /// <summary>
@@ -259,7 +262,8 @@ namespace Compiler
         {
 
             ExpectToken(TokenType.Draw);
-            Token tokenName = ExpectToken(TokenType.Identifier);
+            //Token tokenName = ExpectToken(TokenType.Identifier);
+            Node toDraw = Expression();
             string figLabel = "";
             if (Peek().Type == TokenType.String)
             {
@@ -267,8 +271,9 @@ namespace Compiler
 
 
             }
+            //ExpectToken(TokenType.Semicolon);
 
-            return new DrawNode { figToDraw = tokenName.Value, label = figLabel };
+            return new DrawNode { figToDraw = toDraw, label = figLabel };
         }
         /// <summary>
         /// Parsea una expresion de tipo declaracion de funcion
@@ -367,7 +372,7 @@ namespace Compiler
         /// <returns></returns>
         private Node ConstantCall(string name, Token token)
         {
-            return new ConstantCallNode() { Name = token.Value };
+            return new UnaryExpressionNode( new ConstantCall() { Name = token.Value} );
         }
 
         /// <summary>
@@ -535,7 +540,7 @@ namespace Compiler
             }
             else if (token.Type == TokenType.Number)
             {
-                return new NumberNode { Value = double.Parse(token.Value) };
+                return new UnaryExpressionNode( new Number( double.Parse(token.Value) ));
             }
             else if (token.Type == TokenType.Let)
                 return LetInExpression();
@@ -582,10 +587,10 @@ namespace Compiler
         {
 
 
-            List<ConstantDeclarationNode> declarations = new List<ConstantDeclarationNode>();
+            List<Node> declarations = new List<Node>();
             while (Peek().Type != TokenType.In)
             {
-                declarations.Add((ConstantDeclarationNode)ConstantDeclaration());
+                declarations.Add(Statement());
                 ExpectToken(TokenType.Semicolon);
             }
 

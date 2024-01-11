@@ -1,8 +1,3 @@
-using System.Drawing;
-using System.Formats.Asn1;
-using System.Reflection.Metadata;
-using System.Reflection.Metadata.Ecma335;
-using System.IO;
 
 
 namespace Compiler
@@ -74,7 +69,9 @@ namespace Compiler
             }
             else
             {
-                Sequence seq = (Sequence)((UnaryExpressionNode)body.Evaluate(state).Value);
+
+                Sequence seq = (Sequence)((UnaryExpressionNode)body.Evaluate(state)).GetValue(state);
+
                 for (int i = 0; i < constants.Count; i++)
                 {
                     if (constants[i].Type == TokenType.GuionBajo)
@@ -83,9 +80,9 @@ namespace Compiler
                     }
                     else
                     {
-                        if (i >= seq.nodes.Count)
+                        if (i >= seq.Count)
                             state.AddConstant(new() { Name = constants[i].Value, Value = new UndefinedNode() });
-                        else state.AddConstant(new() { Name = constants[i].Value, Value = seq.nodes[i] });
+                        else state.AddConstant(new() { Name = constants[i].Value, Value = seq.objects[i] });
                     }
                 }
             }
@@ -109,8 +106,8 @@ namespace Compiler
         }
         public override Node Evaluate(State state)
         {
-            state.AddConstant(new ConstantDeclarationNode() { Name = point.Name, Value = new UnaryExpressionNode(){obj  =  point} });
-            return new NullNode();
+            state.AddConstant(new ConstantDeclarationNode() { Name = point.Name, Value = new UnaryExpressionNode(point) });
+            return new UnaryExpressionNode(point);
         }
 
         public override object Clone()
@@ -163,22 +160,22 @@ namespace Compiler
     /// Nodo que contiene el color///NO IMPLEMENTADO
     /// </summary>
 
-/*
-    public class ColorNode : Node
-    {
-        public string Id { get; set; }
-
-        public override object Clone()
+    /*
+        public class ColorNode : Node
         {
-            return new ColorNode() { Id = Id };
-        }
+            public string Id { get; set; }
 
-        public override Node Evaluate(State state)
-        {
-            throw new NotImplementedException();
+            public override object Clone()
+            {
+                return new ColorNode() { Id = Id };
+            }
+
+            public override Node Evaluate(State state)
+            {
+                throw new NotImplementedException();
+            }
         }
-    }
-    */
+        */
     /// <summary>
     /// Nodo que contiene el valor de una medida
     /// </summary>
@@ -207,7 +204,7 @@ namespace Compiler
         {
 
         }
-        public string figToDraw { get; set; }
+        public Node figToDraw { get; set; }
         public string label { get; set; }
 
         public override object Clone()
@@ -217,18 +214,30 @@ namespace Compiler
 
         public override Node Evaluate(State state)
         {
+            Object @object = ((UnaryExpressionNode)figToDraw.Evaluate(state)).GetValue(state);
+            if (@object is Sequence)
+            {
+                Sequence seq = @object as Sequence;
+                for (int i = 0; i < seq.Count; i++)
+                {
+                    state.AddToDraw(((UnaryExpressionNode)seq.objects[i].Evaluate(state)).obj.GetValue(state));
+                }
+                return new NullNode();
+            }
+
+            /*
             if (state.GetConstant(figToDraw).Value.Evaluate(state).GetType().ToString() == "Compiler.SequenceNode")
             {
-                SequenceNode sequenceNode = (SequenceNode)state.GetConstant(figToDraw).Value.Evaluate(state);
-                if (((SequenceNode)sequenceNode.Evaluate(state)).Type != "undefined")
+                Sequence sequenceNode = (Sequence)state.GetConstant(figToDraw).Value.Evaluate(state);
+                if (((Sequence)sequenceNode.Evaluate(state)).Type != "undefined")
                 {
                     for (int i = 0; i < sequenceNode.count.Value; i++)
                     {
                         state.AddToDraw(sequenceNode.nodes[i].Evaluate(state));
                     }
                 }
-            }
-            else state.AddToDraw(state.GetConstant(figToDraw).Value.Evaluate(state));
+            } */
+            state.AddToDraw(@object.GetValue(state));
 
             return new NullNode();
         }
@@ -296,19 +305,19 @@ namespace Compiler
             {
                 case "line":
                     if (Arguments.Count != 2) throw new Exception("Expected 2 arguments in function line call");
-                    return new UnaryExpressionNode(){obj = new Line("", ((UnaryExpressionNode)Arguments[0].Evaluate(state)).obj as Point, ((UnaryExpressionNode)Arguments[1].Evaluate(state)).obj as Point,LineType.Line)};
+                    return new UnaryExpressionNode(new Line("", ((UnaryExpressionNode)Arguments[0].Evaluate(state)).GetValue(state) as Point, ((UnaryExpressionNode)Arguments[1].Evaluate(state)).GetValue(state) as Point, LineType.Line));
                 case "segment":
                     if (Arguments.Count != 2) throw new Exception("Expected 2 arguments in function line call");
-                    return new UnaryExpressionNode(){obj = new Line("", ((UnaryExpressionNode)Arguments[0].Evaluate(state)).obj as Point, ((UnaryExpressionNode)Arguments[1].Evaluate(state)).obj as Point,LineType.Segment)};
+                    return new UnaryExpressionNode(new Line("", ((UnaryExpressionNode)Arguments[0].Evaluate(state)).GetValue(state) as Point, ((UnaryExpressionNode)Arguments[1].Evaluate(state)).GetValue(state) as Point, LineType.Segment));
                 case "ray":
                     if (Arguments.Count != 2) throw new Exception("Expected 2 arguments in function line call");
-                    return new UnaryExpressionNode(){obj = new Line("", ((UnaryExpressionNode)Arguments[0].Evaluate(state)).obj as Point, ((UnaryExpressionNode)Arguments[1].Evaluate(state)).obj as Point,LineType.Ray)};
+                    return new UnaryExpressionNode(new Line("", ((UnaryExpressionNode)Arguments[0].Evaluate(state)).GetValue(state) as Point, ((UnaryExpressionNode)Arguments[1].Evaluate(state)).GetValue(state) as Point, LineType.Ray));
                 case "circle":
                     if (Arguments.Count != 2) throw new Exception("Expected 2 arguments in function circle call");
-                    return new UnaryExpressionNode(){obj =  new Circle("", ((UnaryExpressionNode)Arguments[0].Evaluate(state)).obj as Point, ((UnaryExpressionNode)Arguments[1].Evaluate(state)).obj as Number)};
+                    return new UnaryExpressionNode(new Circle("", ((UnaryExpressionNode)Arguments[0].Evaluate(state)).GetValue(state) as Point, ((UnaryExpressionNode)Arguments[1].Evaluate(state)).GetValue(state) as Number));
                 case "arc":
                     if (Arguments.Count != 4) throw new Exception("Expected 4 arguments in function arc call");
-                    return new UnaryExpressionNode(){obj =  new Arc("", ((UnaryExpressionNode)Arguments[0].Evaluate(state)).obj as Point,((UnaryExpressionNode)Arguments[1].Evaluate(state)).obj as Point ,((UnaryExpressionNode)Arguments[2].Evaluate(state)).obj as Point,((UnaryExpressionNode)Arguments[3].Evaluate(state)).obj as Number)};
+                    return new UnaryExpressionNode(new Arc("", ((UnaryExpressionNode)Arguments[0].Evaluate(state)).GetValue(state) as Point, ((UnaryExpressionNode)Arguments[1].Evaluate(state)).GetValue(state) as Point, ((UnaryExpressionNode)Arguments[2].Evaluate(state)).GetValue(state) as Point, ((UnaryExpressionNode)Arguments[3].Evaluate(state)).GetValue(state) as Number));
                 case "print":
                     if (Arguments.Count != 1) throw new Exception("Expected 1 argument in function print");
                     {
@@ -326,6 +335,9 @@ namespace Compiler
                     if (Arguments.Count != 2) throw new Exception("Expected 2 argument in function ");
                     return Operations.Distance(Arguments[0].Evaluate(state), Arguments[1].Evaluate(state));
 
+                case "intersect":
+                if (Arguments.Count != 2) throw new Exception("Expected 2 argument in function ");
+                return new UnaryExpressionNode(Operations.Intercept(((UnaryExpressionNode)Arguments[0]).GetValue(state),((UnaryExpressionNode)Arguments[1]).GetValue(state)));
 
                 default:
                     FunctionDeclarationNode func = state.CallFunction(Name);
@@ -405,6 +417,7 @@ namespace Compiler
     /// <summary>
     /// Nodo que contiene una llamada a una constante
     /// </summary>
+    /*
     public class ConstantCallNode : Node
     {
         public string Name { get; set; }
@@ -422,6 +435,7 @@ namespace Compiler
         }
 
     }
+    */
 
     /// <summary>
     /// Nodo que contiene un numero
@@ -484,7 +498,7 @@ namespace Compiler
         Line line;
         public SegmentDeclarationNode(string Name)
         {
-            line = new Line(Name,LineType.Segment);
+            line = new Line(Name, LineType.Segment);
         }
         private SegmentDeclarationNode(Line segment)
         {
@@ -498,8 +512,8 @@ namespace Compiler
 
         public override Node Evaluate(State state)
         {
-            state.AddConstant(new ConstantDeclarationNode() { Name = line.name, Value = new UnaryExpressionNode(){obj = line }});
-            return new NullNode();
+            state.AddConstant(new ConstantDeclarationNode() { Name = line.name, Value = new UnaryExpressionNode(line) });
+           return new UnaryExpressionNode(line);
         }
     }
     /// <summary>
@@ -545,7 +559,7 @@ namespace Compiler
         Line ray;
         public RayDeclarationNode(string Name)
         {
-            ray = new Line(Name,LineType.Ray);
+            ray = new Line(Name, LineType.Ray);
         }
         private RayDeclarationNode(Line Ray)
         {
@@ -559,8 +573,8 @@ namespace Compiler
 
         public override Node Evaluate(State state)
         {
-            state.AddConstant(new ConstantDeclarationNode() { Name = ray.name, Value = new UnaryExpressionNode(){obj = ray }});
-            return new NullNode();
+            state.AddConstant(new ConstantDeclarationNode() { Name = ray.name, Value = new UnaryExpressionNode(ray) });
+            return new UnaryExpressionNode(ray);
         }
     }
     /// <summary>
@@ -605,7 +619,7 @@ namespace Compiler
         Line line;
         public LineDeclarationNode(string Name)
         {
-            line = new Line(Name,LineType.Line);
+            line = new Line(Name, LineType.Line);
         }
 
         private LineDeclarationNode(Line Line)
@@ -620,8 +634,8 @@ namespace Compiler
 
         public override Node Evaluate(State state)
         {
-            state.AddConstant(new ConstantDeclarationNode() { Name = line.name, Value = new UnaryExpressionNode(){obj = line }});
-            return new NullNode();
+            state.AddConstant(new ConstantDeclarationNode() { Name = line.name, Value = new UnaryExpressionNode(line) });
+            return new UnaryExpressionNode(line);
         }
     }
     /// <summary>
@@ -675,8 +689,8 @@ namespace Compiler
         public Circle circle;
         public override Node Evaluate(State state)
         {
-            state.AddConstant(new ConstantDeclarationNode() { Name = circle.Name, Value = new UnaryExpressionNode{obj =  circle }});
-            return new NullNode();
+            state.AddConstant(new ConstantDeclarationNode() { Name = circle.Name, Value = new UnaryExpressionNode(circle) });
+            return new UnaryExpressionNode(circle);
         }
 
         public override object Clone()
@@ -749,8 +763,8 @@ namespace Compiler
 
         public override Node Evaluate(State state)
         {
-            state.AddConstant(new ConstantDeclarationNode() { Name = arc.Name,Value = new UnaryExpressionNode(){ obj = arc }});
-            return new NullNode();
+            state.AddConstant(new ConstantDeclarationNode() { Name = arc.Name, Value = new UnaryExpressionNode(arc) });
+            return new UnaryExpressionNode(arc);
         }
     }
     /// <summary>
@@ -823,30 +837,28 @@ namespace Compiler
     /// </summary>
     public class LetInNode : Node
     {
-        public List<ConstantDeclarationNode> Declarations { get; set; }
+        public List<Node> Declarations { get; set; }
         public Node Body { get; set; }
 
         public override object Clone()
         {
-            List<ConstantDeclarationNode> declarationNodes = new();
+            List<Node> declarationNodes = new();
             foreach (var item in Declarations)
             {
-                declarationNodes.Add((ConstantDeclarationNode)item.Clone());
+                declarationNodes.Add((Node)item.Clone());
             }
             return new LetInNode() { Declarations = declarationNodes, Body = (Node)Body.Clone() };
         }
 
         public override Node Evaluate(State state)
         {
+            State localState = (State)state.Clone();
             foreach (var item in Declarations)
             {
-                state.AddConstant((ConstantDeclarationNode)item);
+                item.Evaluate(localState);
             }
-            Node node = Body.Evaluate(state);
-            foreach (var item in Declarations)
-            {
-                state.RemoveConstant(item.Name);
-            }
+            Node node = Body.Evaluate(localState);
+            
             return node;
         }
     }
@@ -883,10 +895,10 @@ namespace Compiler
 
         public override Node Evaluate(State state)
         {
-            if (((UnaryExpressionNode)Condition.Evaluate(state)).obj is Number )
+            if (((UnaryExpressionNode)Condition.Evaluate(state)).GetValue(state) is Number)
             {
-                if((((UnaryExpressionNode)Condition.Evaluate(state)).obj as Number).Value == 0)
-                return ElseBranch.Evaluate(state);
+                if ((((UnaryExpressionNode)Condition.Evaluate(state)).GetValue(state) as Number).Value == 0)
+                    return ElseBranch.Evaluate(state);
                 else return ThenBranch.Evaluate(state);
             }
             else return ThenBranch.Evaluate(state);
@@ -925,7 +937,22 @@ namespace Compiler
     }
     public class UnaryExpressionNode : Node
     {
-        public Object obj {get; set;}
+
+        public Object obj { get; private set; }
+        public UnaryExpressionNode(Object @object)
+        {
+            obj = @object;
+        }
+
+        public bool IsValueAConstant()
+        {
+            return obj is ConstantCall;
+        }
+
+        public Object GetValue(State state)
+        {
+            return obj.GetValue(state);
+        }
         public override object Clone()
         {
             return this;

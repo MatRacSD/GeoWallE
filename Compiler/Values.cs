@@ -6,12 +6,23 @@ namespace Compiler
         Segment,
         Ray,
     }
-    public class Object
+    public abstract partial class Object
+    {
+              public abstract Object GetValue(State state);
+    }
+    public partial class Object
     {
         public Object(bool IsRepresentable)
         {
             isRepresentable = IsRepresentable;
         }
+
+        public Object GetObject()
+        {
+            return this;
+        }
+
+       
 
         
 
@@ -41,11 +52,16 @@ namespace Compiler
              //NOT IMPLEMENTED
         };
         float[] rbga;
+
+        public override Object GetValue(State state)
+        {
+            return this;
+        }
     }
 
     
 
-    public class Point : Object
+    public class Point : Object, ICloneable
     {
         public string Name;
         public double xValue;
@@ -65,6 +81,18 @@ namespace Compiler
                 yValue *= -1;
             }
         }
+        public Point(string Name, Number x, Number y) : base(true)
+        {
+            this.Name = Name;
+            xValue = x.Value;
+            yValue = y.Value;
+        }
+
+        public object Clone()
+        {
+            return new Point(Name,new(xValue),new(yValue));
+        }
+
         public override  int GetCode()
         {
             return 1;
@@ -74,12 +102,26 @@ namespace Compiler
             return new double[] { xValue, yValue };
         }
 
+        public override Object GetValue(State state)
+        {
+            return this;
+        }
     }
+
+    internal interface ICloneable<T>
+    {
+    }
+
     public class Undefined : Object
     {
         public Undefined() : base(false)
         {
 
+        }
+
+        public override Object GetValue(State state)
+        {
+            return this;
         }
     }
     public class Number : Object
@@ -91,6 +133,11 @@ namespace Compiler
         }
 
         public readonly double Value;
+
+        public override Object GetValue(State state)
+        {
+            return this;
+        }
     }
 
     public class Measure : Object
@@ -104,6 +151,11 @@ namespace Compiler
             else throw new Exception("Invalid type at Number construction, expected Number, got: " + token.Type);
         }
         private double Value;
+
+        public override Object GetValue(State state)
+        {
+            return this;
+        }
     }
 
     public class Segment : Object
@@ -130,7 +182,10 @@ namespace Compiler
             return 5;
         }
 
-
+        public override Object GetValue(State state)
+        {
+            throw new NotImplementedException();
+        }
     }
     public class Ray : Object
     {
@@ -152,6 +207,11 @@ namespace Compiler
         public override int GetCode()
         {
             return 10;
+        }
+
+        public override Object GetValue(State state)
+        {
+            throw new NotImplementedException();
         }
     }
     public class Line : Object
@@ -177,7 +237,12 @@ namespace Compiler
         }
         public override int GetCode()
         {
-            return 100;
+            return 5;
+        }
+
+        public override Object GetValue(State state)
+        {
+           return this;
         }
     }
 
@@ -200,7 +265,12 @@ namespace Compiler
         }
         public override int GetCode()
         {
-            return 200;
+            return 50;
+        }
+
+        public override Object GetValue(State state)
+        {
+            return this;
         }
     }
     public class Arc : Object
@@ -216,7 +286,7 @@ namespace Compiler
             center = new("");
             p1 = new("");
             p2 = new("");
-            radio = new(70);
+            radio = new(100);
         }
         public Arc(string Name, Point center, Point p1, Point p2, Number radio) : base(true)
         {
@@ -229,13 +299,18 @@ namespace Compiler
 
         public override int GetCode()
         {
-            return 400;
+            return 100;
+        }
+
+        public override Object GetValue(State state)
+        {
+           return this;
         }
     }
     public class Sequence : Object
     {
 
-        List<Object> objects = new();
+        public List<Node> objects = new();
         private string Type = "none";
         public int Count {get => objects.Count;}
         public bool isUndefined { get; set; }
@@ -244,18 +319,41 @@ namespace Compiler
         {
             this.isInfinite = isInfinite;
         }
-        public void Add(Object obj)
+        public void Add(Object objet)
         {
             if (Type == "none")
             {
-                objects.Add(obj);
-                Type = obj.GetType().ToString();
+                objects.Add(new UnaryExpressionNode( objet));
+                Type = objet.GetType().ToString();
             }
-            else if (Type != obj.GetType().ToString())
+            else if (Type != objet.GetType().ToString())
             {
-                throw new Exception("Sequence must be of the same type, expected: " + Type + " ,got: " + obj.GetType());
+                throw new Exception("Sequence must be of the same type, expected: " + Type + " ,got: " + objet.GetType());
             }
-            else objects.Add(obj);
+            else objects.Add(new UnaryExpressionNode(objet));
+        }
+
+        public override Object GetValue(State state)
+        {
+            return this;
+        }
+    }
+
+    public class ConstantCall : Object
+    {
+        public string Name {get; set;}
+        public ConstantCall() : base(false)
+        {
+            
+        }
+
+        
+
+        public override Object GetValue(State state)
+        {
+             ConstantDeclarationNode constD = state.GetConstant(Name);
+            UnaryExpressionNode result = (UnaryExpressionNode)constD.Value.Clone();
+            return result.GetValue(state);
         }
     }
 
@@ -267,6 +365,9 @@ namespace Compiler
            this.content = content;
         }
 
-        
+        public override Object GetValue(State state)
+        {
+            return this;
+        }
     }
 }
