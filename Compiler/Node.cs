@@ -288,7 +288,7 @@ namespace Compiler
             State funcScope = (State)state.Clone();
             for (int i = 0; i < args.Count; i++)
             {
-                funcScope.ForceAddConstant(new ConstantDeclarationNode() { Name = Parameters[i], Value = (((Node)args[i].Clone()).Evaluate(funcScope) as UnaryExpressionNode).Evaluate(state) });
+                funcScope.ForceAddConstant(new ConstantDeclarationNode() { Name = Parameters[i], Value = new UnaryExpressionNode((((Node)args[i].Clone()).Evaluate(funcScope) as UnaryExpressionNode).GetValue(funcScope)) });
             }
             Node result = ((Node)Body.Clone()).Evaluate(funcScope);
             /*for (int i = 0; i < Parameters.Count; i++)
@@ -874,6 +874,7 @@ namespace Compiler
         public override Node Evaluate(State state)
         {
             State localState = (State)state.Clone();
+            localState.IsInLet = true;
             foreach (var item in Declarations)
             {
                 item.Evaluate(localState);
@@ -920,6 +921,12 @@ namespace Compiler
             {
                 if ((((UnaryExpressionNode)Condition.Evaluate(state)).GetValue(state) as Number).Value == 0)
                     return ElseBranch.Evaluate(state);
+                else return ThenBranch.Evaluate(state);
+            }
+            else if(((UnaryExpressionNode)Condition.Evaluate(state)).GetValue(state) is Sequence)
+            {
+                if((((UnaryExpressionNode)Condition.Evaluate(state)).GetValue(state) as Sequence).Count == 0)
+                return ElseBranch.Evaluate(state);
                 else return ThenBranch.Evaluate(state);
             }
             else return ThenBranch.Evaluate(state);

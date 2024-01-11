@@ -66,11 +66,13 @@ public partial class CodeEditorScript : CodeEdit
 				outputConsole.Text += item.Error;
 			}
 
-			foreach (var terna in state.toDraw)
+			for (int i = 0; i < state.toDraw.objects.Count; i++)
 			{
-				Compiler.Object fig = terna.Key;
-				string label = terna.Value.Item1;
-				Godot.Color color = new Godot.Color(){R = terna.Value.Item2.rbga[0],G = terna.Value.Item2.rbga[1],B = terna.Value.Item2.rbga[2],A = 1};
+				var terna = state.toDraw;
+				
+				Compiler.Object fig = state.toDraw.objects[i];
+				string label = state.toDraw.labels[i];
+				Godot.Color color = new Godot.Color(){R = state.toDraw.colors[i].rbga[0],G = state.toDraw.colors[i].rbga[1],B = state.toDraw.colors[i].rbga[2],A = 1};
 				switch (fig.GetType().ToString()) //Se pintan los nodos
 				{
 					case "Compiler.Point": //Se pinta el punto

@@ -85,7 +85,7 @@ namespace Compiler
                     ExpectToken(TokenType.End);
                     return new NullNode();
                 case TokenType.OpenBrace:
-                    return SequenceExpression();
+                    return LogicExpression();
 
 
                 default:
@@ -107,7 +107,7 @@ namespace Compiler
 
         private Node SequenceExpression()
         {
-            ExpectToken(TokenType.OpenBrace);
+            //ExpectToken(TokenType.OpenBrace);
             Sequence seq = new(false);
             while (Peek().Type != TokenType.CloseBrace && tokenList.HasMoreTokens())
             {
@@ -457,7 +457,7 @@ namespace Compiler
                 case TokenType.Arc:
                     return ArcExpression();
                 case TokenType.OpenBrace:
-                    return SequenceExpression();
+                    return LogicExpression();
 
 
                 default:
@@ -583,6 +583,10 @@ namespace Compiler
                 }
 
                 else return ConstantCall(token.Value, token);
+            }
+            else if (token.Type == TokenType.OpenBrace)
+            {
+                return SequenceExpression();
             }
             else if(token.Type == TokenType.String)
             {

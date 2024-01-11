@@ -2,8 +2,22 @@ using System.Runtime.InteropServices;
 
 namespace Compiler
 {
+    
+    public class Terna{
+        public void Add(Object @object, Color color,string label)
+        {
+            objects.Add(@object);
+            labels.Add(label);
+            colors.Add(color);
+            
+        }
+        public List<Object> objects = new();
+        public List<string> labels = new();
+        public List<Color> colors = new();
+    }
     public class State : ICloneable
     {
+        
         /// <summary>
         /// funciones declaradas
         /// </summary>
@@ -14,6 +28,7 @@ namespace Compiler
         /// </summary>
         /// <returns></returns>
         public Dictionary<string, ConstantDeclarationNode> constants = new();
+        public bool IsInLet = false;
 
         public Color defaultColor = new("black");
         public List<Color> activeColors = new();
@@ -25,6 +40,8 @@ namespace Compiler
                 activeColors.RemoveAt(activeColors.Count - 1);
             }
         }
+
+        //private int counter = 0;
         
         /// <summary>
         /// Archivos importados
@@ -41,7 +58,9 @@ namespace Compiler
         /// </summary>
         /// <returns></returns>
         /// 
-        public Dictionary<Object,Tuple<string,Color>> toDraw = new();
+        //public Dictionary<int,Tuple<string,Color>> toDraw = new();
+        public Terna toDraw = new();
+        //public List<Object> objectsToDraw = new();
         //public List<Object> toDraw = new();
         /// <summary>
         /// Errores encontrados
@@ -51,12 +70,13 @@ namespace Compiler
         
         public object Clone()
         {
+            
            Dictionary<string,ConstantDeclarationNode> constantNodes = new();
            foreach (var item in constants)
            {
               constantNodes.Add(item.Key,(ConstantDeclarationNode)item.Value.Clone());
            }
-            return new State(){functions = functions, constants = constantNodes,toDraw = toDraw,toPrint = toPrint,errors = errors};
+            return new State(){functions = functions, constants = constantNodes,toDraw = toDraw,toPrint = toPrint,errors = errors,IsInLet = IsInLet};
         }
         /// <summary>
         /// Parsea y evalua el input
@@ -80,8 +100,9 @@ namespace Compiler
         public void AddToDraw(Object obj, string label)
         {
          if(activeColors.Count > 0)   
-            toDraw.Add(obj,new(label,activeColors.Last()));
-            else toDraw.Add(obj,new(label,defaultColor));
+            toDraw.Add(obj,activeColors.Last(),label);
+            else toDraw.Add(obj,defaultColor,label);
+            //objectsToDraw.Add(obj);
         }
         /// <summary>
         /// Retorna verdadero si contiene una funcion con functionName
@@ -134,10 +155,16 @@ namespace Compiler
         /// <param name="constant"></param>
         public void AddConstant(ConstantDeclarationNode constant)
         {
-            if (functions.ContainsKey(constant.Name) || constants.ContainsKey(constant.Name))
+            if ((functions.ContainsKey(constant.Name) || constants.ContainsKey(constant.Name))&& !IsInLet)
             {
                 throw new Exception("A function or constant with the name '" + constant.Name + "' already exists.");
             }
+            if(IsInLet)
+{
+    ForceAddConstant(constant);
+    return;
+}
+
             constants[constant.Name] = constant;
         }
         /// <summary>

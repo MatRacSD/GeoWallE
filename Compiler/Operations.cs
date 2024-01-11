@@ -36,6 +36,10 @@ namespace Compiler
         {
             Object leftObj = (left as UnaryExpressionNode).GetValue(state);
             Object rightObj = (right as UnaryExpressionNode).GetValue(state);
+            if((leftObj is Sequence) && (rightObj is Sequence))
+            {
+                return new UnaryExpressionNode((leftObj as Sequence).Sum(rightObj as Sequence,state));
+            }
            
             if(operations.ContainsKey(Operator))
             {

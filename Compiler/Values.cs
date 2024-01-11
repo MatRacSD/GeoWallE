@@ -446,6 +446,16 @@ namespace Compiler
             else objects.Add(new UnaryExpressionNode(objet));
         }
 
+        public Sequence Sum(Sequence sequence,State state)
+        {
+            foreach (var item in sequence.objects)
+            {
+                 Object obj = (item.Evaluate(state) as UnaryExpressionNode).GetValue(state);
+                 Add(obj);
+            }
+            return this;
+        }
+
         public override Object GetValue(State state)
         {
             for (int i = 0; i < objects.Count; i++)
